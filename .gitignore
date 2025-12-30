@@ -3,6 +3,9 @@
 worklogs/*
 !worklogs/.gitkeep
 
+worktrees/*
+!worktrees/.gitkeep
+
 playground/*
 !playground/.gitkeep
 

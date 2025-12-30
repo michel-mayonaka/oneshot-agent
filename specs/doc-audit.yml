@@ -21,5 +21,6 @@ prompt_text: |
   - 依頼内容の確認や質問はせず、レポート本文から書き始めること。
 skills:
   - doc-audit
+worktree: false
 # target_dir: /path/to/project
 # disable_global_skills: true

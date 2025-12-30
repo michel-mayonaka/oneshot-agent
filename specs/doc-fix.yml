@@ -14,5 +14,7 @@ prompt_text: |
   ```
   __INPUT_AUDIT_REPORT__
   ```
+worktree: true
+pr: true
 # target_dir: /path/to/project
 # disable_global_skills: true

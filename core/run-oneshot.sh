@@ -12,6 +12,11 @@ YAML spec (flat):
   skills:
     - doc-audit
   target_dir: /path/to/project
+  worktree: true
+  pr: true
+  pr_title: "..."
+  pr_body_file: /path/to/body.md
+  pr_draft: true
   disable_global_skills: true
 
 Notes:
@@ -93,6 +98,11 @@ NAME=""
 PROMPT_FILE=""
 PROMPT_TEXT=""
 TARGET_DIR=""
+USE_WORKTREE=""
+PR_ENABLED=""
+PR_TITLE=""
+PR_BODY_FILE=""
+PR_DRAFT=""
 DISABLE_GLOBAL=""
 SKILLS=()
 INPUT_KEYS=()
@@ -153,6 +163,11 @@ while IFS= read -r line || [[ -n "$line" ]]; do
         fi
         ;;
       target_dir) TARGET_DIR="$val" ;;
+      worktree) USE_WORKTREE="$val" ;;
+      pr) PR_ENABLED="$val" ;;
+      pr_title) PR_TITLE="$val" ;;
+      pr_body_file) PR_BODY_FILE="$val" ;;
+      pr_draft) PR_DRAFT="$val" ;;
       disable_global_skills) DISABLE_GLOBAL="$val" ;;
       *) : ;;
     esac
@@ -185,6 +200,10 @@ if [[ -z "$TARGET_DIR" ]]; then
   fi
 fi
 
+if [[ -z "$USE_WORKTREE" ]]; then
+  USE_WORKTREE="true"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
 ONESHOT="$ROOT_DIR/core/oneshot-exec.sh"
@@ -193,6 +212,27 @@ if [[ ! -x "$ONESHOT" ]]; then
   echo "oneshot-exec.sh not found: $ONESHOT" >&2
   exit 1
 fi
+
+RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
+RUNS_DIR="$ROOT_DIR/worklogs/$NAME"
+mkdir -p "$RUNS_DIR"
+RUN_DIR_PREP="$RUNS_DIR/$RUN_ID"
+mkdir -p "$RUN_DIR_PREP/logs"
+RUN_ONESHOT_LOG="$RUN_DIR_PREP/logs/run-oneshot.log"
+{
+  echo "run_id=$RUN_ID"
+  echo "spec=$SPEC"
+  echo "name=$NAME"
+  echo "timestamp=$(date +%Y-%m-%dT%H:%M:%S%z)"
+} >> "$RUN_ONESHOT_LOG"
+exec 3>&1 4>&2
+echo "run_oneshot_log=$RUN_ONESHOT_LOG" >&3
+exec >>"$RUN_ONESHOT_LOG" 2>&1
+trap 'echo "ERROR line=$LINENO cmd=$BASH_COMMAND" >&2' ERR
+
+emit() {
+  printf '%s\n' "$*" | tee -a "$RUN_ONESHOT_LOG" >&3
+}
 
 TMP_DIR="$(mktemp -d)"
 cleanup() { rm -rf "$TMP_DIR"; }
@@ -236,14 +276,13 @@ if [[ -f "$PROMPT_PATH" ]]; then
       exit 1
     fi
     resolved_path="$ONESHOT_AGENT_ROOT/$v"
-    if [[ -z "$resolved_path" || ! -f "$resolved_path" ]]; then
+    if [[ ! -f "$resolved_path" ]]; then
       if [[ -f "$v" ]]; then
         resolved_path="$v"
+      else
+        echo "Input file not found: key=$k, value=$v, resolved=$resolved_path" >&2
+        exit 1
       fi
-    fi
-    if [[ -z "$resolved_path" ]]; then
-      resolved_path="$TMP_DIR/input.$k.txt"
-      printf '%s' "$v" > "$resolved_path"
     fi
     key_upper="$(printf '%s' "$k" | tr '[:lower:]' '[:upper:]')"
     placeholder="__INPUT_${key_upper}__"
@@ -268,13 +307,45 @@ if [[ $RENDER_ONLY -eq 1 ]]; then
   exit 0
 fi
 
-RUNS_DIR="$ROOT_DIR/worklogs/$NAME"
-mkdir -p "$RUNS_DIR"
+REPO_DIR="$TARGET_DIR"
+
+WORKTREE_DIR=""
+WORKTREE_BRANCH=""
+WORKTREE_BASE=""
+if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
+  WORKTREE_SCRIPT="$ROOT_DIR/core/create-worktree.sh"
+  if [[ ! -x "$WORKTREE_SCRIPT" ]]; then
+    echo "create-worktree.sh not found: $WORKTREE_SCRIPT" >&2
+    exit 1
+  fi
+
+  WORKTREE_OUTPUT="$("$WORKTREE_SCRIPT" \
+    --repo "$TARGET_DIR" \
+    --run-id "$RUN_ID" \
+    --spec-name "$NAME" \
+    --worktree-root "$ROOT_DIR/worktrees")"
+  emit "$WORKTREE_OUTPUT"
+
+  WORKTREE_DIR="$(printf '%s\n' "$WORKTREE_OUTPUT" | awk -F= '/^worktree_dir=/{print $2}' | tail -n 1)"
+  WORKTREE_BRANCH="$(printf '%s\n' "$WORKTREE_OUTPUT" | awk -F= '/^branch=/{print $2}' | tail -n 1)"
+  WORKTREE_BASE="$(printf '%s\n' "$WORKTREE_OUTPUT" | awk -F= '/^base_branch=/{print $2}' | tail -n 1)"
+  if [[ -z "$WORKTREE_DIR" ]]; then
+    echo "Failed to create worktree" >&2
+    exit 1
+  fi
+  TARGET_DIR="$WORKTREE_DIR"
+fi
 
 SKILLS_ARG=()
 if [[ ${#SKILLS[@]} -gt 0 ]]; then
   SKILLS_ARG=( -s "$(IFS=,; echo "${SKILLS[*]}")" )
 fi
+
+ONESHOT_CMD=( "$ONESHOT" -C "$TARGET_DIR" )
+if [[ ${#SKILLS_ARG[@]} -gt 0 ]]; then
+  ONESHOT_CMD+=( "${SKILLS_ARG[@]}" )
+fi
+ONESHOT_CMD+=( "$PROMPT_PATH" )
 
 DISABLE_GLOBAL_ENV=()
 if [[ "$DISABLE_GLOBAL" == "true" || "$DISABLE_GLOBAL" == "1" ]]; then
@@ -282,15 +353,33 @@ if [[ "$DISABLE_GLOBAL" == "true" || "$DISABLE_GLOBAL" == "1" ]]; then
 fi
 
 if [[ ${#DISABLE_GLOBAL_ENV[@]} -gt 0 ]]; then
+  set +e
   OUTPUT="$(ONESHOT_RUNS_DIR="$RUNS_DIR" \
+    ONESHOT_RUN_ID="$RUN_ID" \
     "${DISABLE_GLOBAL_ENV[@]}" \
-    "$ONESHOT" -C "$TARGET_DIR" "${SKILLS_ARG[@]}" "$PROMPT_PATH")"
+    "${ONESHOT_CMD[@]}")"
+  ONESHOT_STATUS=$?
+  set -e
 else
+  set +e
   OUTPUT="$(ONESHOT_RUNS_DIR="$RUNS_DIR" \
-    "$ONESHOT" -C "$TARGET_DIR" "${SKILLS_ARG[@]}" "$PROMPT_PATH")"
+    ONESHOT_RUN_ID="$RUN_ID" \
+    "${ONESHOT_CMD[@]}")"
+  ONESHOT_STATUS=$?
+  set -e
 fi
 
-echo "$OUTPUT"
+emit "$OUTPUT"
+if [[ ${ONESHOT_STATUS:-0} -ne 0 ]]; then
+  emit "oneshot_exit_code=$ONESHOT_STATUS"
+  exit "$ONESHOT_STATUS"
+fi
+if [[ -n "$WORKTREE_DIR" ]]; then
+  emit "worktree_dir=$WORKTREE_DIR"
+  if [[ -n "$WORKTREE_BRANCH" ]]; then
+    emit "worktree_branch=$WORKTREE_BRANCH"
+  fi
+fi
 
 RUN_DIR="$(printf '%s\n' "$OUTPUT" | awk -F= '/^run_dir=/{print $2}' | tail -n 1)"
 if [[ -n "$RUN_DIR" ]]; then
@@ -299,4 +388,38 @@ if [[ -n "$RUN_DIR" ]]; then
     v="${INPUT_VALS[$i]}"
     printf '%s=%s\n' "$k" "$v" >> "$RUN_DIR/inputs/inputs.txt"
   done
+fi
+
+if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
+  PR_SCRIPT="$ROOT_DIR/core/create-pr.sh"
+  if [[ ! -x "$PR_SCRIPT" ]]; then
+    echo "create-pr.sh not found: $PR_SCRIPT" >&2
+    exit 1
+  fi
+
+  PR_ARGS=(--repo "$REPO_DIR" --worktree "$TARGET_DIR")
+  if [[ -n "$WORKTREE_BRANCH" ]]; then
+    PR_ARGS+=(--branch "$WORKTREE_BRANCH")
+  fi
+  if [[ -n "$WORKTREE_BASE" ]]; then
+    PR_ARGS+=(--base "$WORKTREE_BASE")
+  fi
+  if [[ -n "$PR_TITLE" ]]; then
+    PR_ARGS+=(--title "$PR_TITLE")
+  fi
+  if [[ -n "$PR_BODY_FILE" ]]; then
+    if [[ "$PR_BODY_FILE" != /* ]]; then
+      PR_BODY_FILE="$ROOT_DIR/$PR_BODY_FILE"
+    fi
+    PR_ARGS+=(--body-file "$PR_BODY_FILE")
+  elif [[ -n "$RUN_DIR" && -f "$RUN_DIR/report.md" ]]; then
+    PR_ARGS+=(--body-file "$RUN_DIR/report.md")
+  fi
+  if [[ "$PR_DRAFT" == "true" || "$PR_DRAFT" == "1" ]]; then
+    PR_ARGS+=(--draft)
+  fi
+  PR_ARGS+=(--commit-message "${NAME}: update (${RUN_ID})")
+
+  PR_OUTPUT="$("$PR_SCRIPT" "${PR_ARGS[@]}")"
+  emit "$PR_OUTPUT"
 fi
