@@ -48,9 +48,15 @@ if [[ -n "$GIT_ROOT" ]]; then
   DIFF_NAMESTAT="$(git diff --name-status 2>/dev/null || true)"
 fi
 
-# last_message 要約（先頭だけ）
+# last_message 要約（先頭だけ）。無ければ worklog.md / worklog.txt をフォールバックとして使う。
 LASTMSG_HEAD=""
 if [[ -f "$LASTMSG" ]]; then
+  LASTMSG_HEAD="$(sed -n '1,60p' "$LASTMSG")"
+elif [[ -f "$RUN_DIR/worklog.md" ]]; then
+  LASTMSG="$RUN_DIR/worklog.md"
+  LASTMSG_HEAD="$(sed -n '1,60p' "$LASTMSG")"
+elif [[ -f "$RUN_DIR/worklog.txt" ]]; then
+  LASTMSG="$RUN_DIR/worklog.txt"
   LASTMSG_HEAD="$(sed -n '1,60p' "$LASTMSG")"
 fi
 
@@ -102,17 +108,16 @@ $( [[ -n "$DIFF_NAMESTAT" ]] && printf '```text\n%s\n```\n' "$DIFF_NAMESTAT" || 
 ## Prompt (first 80 lines)
 $( [[ -f "$PROMPT" ]] && printf '```text\n%s\n```\n' "$(sed -n '1,80p' "$PROMPT")" || echo "- (missing prompt.txt)" )
 
-## Output (last_message.md head)
-$( [[ -n "$LASTMSG_HEAD" ]] && printf '```markdown\n%s\n```\n' "$LASTMSG_HEAD" || echo "- (missing last_message.md)" )
+## Output (last_message or worklog head)
+$( [[ -n "$LASTMSG_HEAD" ]] && printf '```markdown\n%s\n```\n' "$LASTMSG_HEAD" || echo "- (no output captured)" )
 
 ## Errors / Warnings (stderr tail grep)
 $( [[ -n "$ERROR_SNIPPET" ]] && printf '```text\n%s\n```\n' "$ERROR_SNIPPET" || echo "- (none detected)" )
 
 ## Artifacts
 - events: $( [[ -f "$EVENTS" ]] && echo "\`events.jsonl\`" || echo "N/A" )
-- worklog: $( [[ -f "$RUN_DIR/worklog.txt" ]] && echo "\`worklog.txt\`" || echo "N/A" )
+- worklog: $( [[ -f "$RUN_DIR/worklog.md" ]] && echo "\`worklog.md\`" || [[ -f "$RUN_DIR/worklog.txt" ]] && echo "\`worklog.txt\`" || echo "N/A" )
 - stderr/time: $( [[ -f "$TIMELOG" ]] && echo "\`stderr_and_time.txt\`" || echo "N/A" )
 EOF
 
 echo "generated: $OUT"
-

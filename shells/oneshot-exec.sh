@@ -59,13 +59,21 @@ fi
     --model gpt-5.2-codex \
     --json \
     - < "$PROMPT_FILE" \
-  | tee "$RUN_DIR/events.jsonl" \
-  | jq -r '
-      # 人間向けworklog：assistantの最終メッセージを拾う
-      select(.type=="item.completed" and .item.type=="agent_message") | .item.text
-    ' > "$RUN_DIR/worklog.txt"
+  | tee "$RUN_DIR/events.jsonl" >/dev/null
   popd >/dev/null
 } 2> "$RUN_DIR/stderr_and_time.txt"
+
+# 作業ログ：reasoning や agent_message を時系列で Markdown 風に残す（Markdown形式）
+jq -r '
+  select(.type=="item.completed" and (.item.type=="reasoning" or .item.type=="agent_message"))
+  | "### " + .item.type + "\n" + (.item.text // "") + "\n"
+' "$RUN_DIR/events.jsonl" > "$RUN_DIR/worklog.md"
+
+# 最終メッセージ（サマリー）を別ファイルに保存（summary_report から参照）
+jq -rs '
+  map(select(.type=="item.completed" and .item.type=="agent_message"))
+  | if length > 0 then .[length-1].item.text else empty end
+' "$RUN_DIR/events.jsonl" > "$RUN_DIR/last_message.md"
 
 # トークン usage（最後のturn.completedを採用）
 jq -c 'select(.type=="turn.completed") | .usage' "$RUN_DIR/events.jsonl" | tail -n 1 > "$RUN_DIR/usage.json"
