@@ -185,3 +185,10 @@ echo "run_dir=$RUN_DIR"
 echo "target_dir=$TARGET_DIR"
 
 "$SCRIPT_DIR/summarize_run.sh" "$RUN_DIR"
+
+# オプション: 作業ログを自動的に日本語化する
+if [[ -n "${ONESHOT_AUTO_TRANSLATE_WORKLOG:-}" ]]; then
+  if ! "$SCRIPT_DIR/translate-worklog-to-ja.sh" "$RUN_DIR"; then
+    echo "WARN: failed to translate worklog to Japanese" >&2
+  fi
+fi

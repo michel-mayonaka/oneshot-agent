@@ -11,3 +11,5 @@ export ONESHOT_AGENT_ROOT="$HOME/dev/oneshot-agent"
 # 作業ログ翻訳に使うモデル（省略時は gpt-5.2）
 export ONESHOT_TRANSLATE_MODEL="gpt-5.2"
 
+# 各 run の作業ログを自動的に日本語へ翻訳したい場合は 1 を設定
+# export ONESHOT_AUTO_TRANSLATE_WORKLOG=1

@@ -1,8 +1,7 @@
-# Refactor Safety Guidelines
+# リファクタリングの安全指針
 
-- Prefer small, incremental changes with clear diffs.
-- Keep public APIs backwards compatible unless explicitly allowed to break them.
-- Preserve existing behaviour; add tests or checks before large refactors when可能なら。
-- Avoid large, cross-cutting renames in a single run; focus on one concern.
-- Clearly document any behaviour changes in comments or README updates.
-
+- 変更は小さく段階的に行い、差分が読みやすい単位でまとめてください。
+- 公開 API は明示的な合意が無い限り後方互換性を維持してください。
+- 挙動を変える前に、可能であればテストやチェックを追加してから大きなリファクタを行ってください。
+- 一度に広範なリネームを行わず、関心ごとを絞った小さな塊で進めてください。
+- 挙動が変わる場合は、コメントや README に変更内容と意図を簡潔に記録してください。

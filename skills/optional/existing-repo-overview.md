@@ -1,10 +1,9 @@
-# Existing Repository Overview Skill
+# 既存リポジトリを扱うときの観察ポイント
 
-When working in an existing repository:
+既存のリポジトリで作業するときは、次の方針に従ってください。
 
-- First, scan the project structure (top-level dirs, main entrypoints, tests).
-- Identify the primary runtime path for the feature you will touch.
-- Prefer aligning with existing patterns and libraries instead of introducing new ones.
-- Before editing, summarise your understanding of the current design in the worklog.
-- After changes, explain how to run tests or checks to validate your edits.
-
+- まずプロジェクト構成をざっと確認し、トップレベルのディレクトリ構造・エントリポイント・テストの配置を把握する。
+- これから触る機能がどの実行パス（CLI / API / UI など）にぶら下がっているかを特定する。
+- 新しいライブラリや独自パターンを持ち込むよりも、既存のスタイルやユーティリティに合わせることを優先する。
+- 変更前に、現在の設計や制約について自分の理解を `worklog` に短くメモしておく。
+- 変更後は、テストや簡単な動作確認の方法を `worklog` や README に書き残す。
