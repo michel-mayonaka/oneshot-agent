@@ -98,12 +98,30 @@ SKILLS=()
 INPUT_KEYS=()
 INPUT_VALS=()
 IN_SKILLS_BLOCK=0
-IN_INPUTS_BLOCK=0
+IN_PROMPT_TEXT_BLOCK=0
+PROMPT_TEXT_INDENT=""
 
 while IFS= read -r line || [[ -n "$line" ]]; do
   # strip comments
   line="${line%%#*}"
+  # keep raw for block parsing
+  raw_line="$line"
   line="$(trim "$line")"
+  if [[ $IN_PROMPT_TEXT_BLOCK -eq 1 ]]; then
+    # end block if indentation is shorter than the block indent
+    if [[ -z "$raw_line" ]]; then
+      PROMPT_TEXT+=$'\n'
+      continue
+    fi
+    if [[ -n "$PROMPT_TEXT_INDENT" && "${raw_line}" != ${PROMPT_TEXT_INDENT}* ]]; then
+      IN_PROMPT_TEXT_BLOCK=0
+    else
+      # strip the block indent prefix
+      PROMPT_TEXT+="${raw_line#${PROMPT_TEXT_INDENT}}"
+      PROMPT_TEXT+=$'\n'
+      continue
+    fi
+  fi
   [[ -z "$line" ]] && continue
 
   if [[ "$line" == skills:* ]]; then
@@ -125,7 +143,15 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     case "$key" in
       name) NAME="$val" ;;
       prompt_file) PROMPT_FILE="$val" ;;
-      prompt_text) PROMPT_TEXT="$val" ;;
+      prompt_text)
+        if [[ "$val" == "|" ]]; then
+          IN_PROMPT_TEXT_BLOCK=1
+          # detect indent from next line by using leading spaces of raw_line after "prompt_text:"
+          PROMPT_TEXT_INDENT="  "
+        else
+          PROMPT_TEXT="$val"
+        fi
+        ;;
       target_dir) TARGET_DIR="$val" ;;
       disable_global_skills) DISABLE_GLOBAL="$val" ;;
       *) : ;;
