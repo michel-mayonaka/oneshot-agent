@@ -8,6 +8,8 @@
   - `shells/`: 実行・集計用シェルスクリプト
   - `samples/prompts/zero-to-one/`: 0→1 用サンプルプロンプト
   - `samples/prompts/existing-repo/`: 既存リポジトリ用サンプルプロンプト
+  - `skills/global/`: すべての run に自動で含めたい共通ガイド
+  - `skills/optional/`: 実行時に明示指定して読み込むスキル群
   - `playground/`: サンプルプロンプトなどで生成された成果物を置く作業用ディレクトリ（`.gitignore` 対象）
 - `shells/`:
   - `oneshot-exec.sh`: 単一プロンプトを Codex CLI に投げる実行スクリプト
@@ -42,3 +44,23 @@
   - 確認に使ったコマンド例
   を短く書いてください。
 - `worklogs/` の生成物は基本的にコミット対象から除外し、スクリプトやプロンプトの変更に集中してください。
+
+## Skills 設計方針
+- エージェント用スキルは Markdown として `skills/` 配下に管理します。
+- ディレクトリ:
+  - `skills/global/`: すべての run に自動で含めたい共通ガイド（例: セーフティ指針、リファクタリング方針）。
+  - `skills/optional/`: タスクごとに `-s` オプションや `ONESHOT_SKILLS` で明示的に指定して読み込むスキル群。
+- 実行時のバンドル:
+  - `oneshot-exec.sh` は `prompt.raw.txt`（元のプロンプト）と `prompt.txt`（skills を前置した最終プロンプト）を分けて保存します。
+  - 使用されたスキルのファイル一覧を `skills_used.txt` に残し、`summary_report.md` のメタデータにも `skills:` として表示します。
+  - グローバルスキルを無効化したい場合は `ONESHOT_DISABLE_GLOBAL_SKILLS=1` を設定してください。
+
+## プロンプトサイズ & バリデーション方針（構想段階）
+- Skills を盛り込みすぎると精度が落ちる可能性があるため、「検知 → 必要なら制御する」という方針をとります。
+- `oneshot-exec.sh` 側での想定:
+  - `prompt.txt` 生成後に、文字数・行数・概算トークン数を計測し、`prompt_stats.txt` に保存する。
+  - 閾値を越えたら stderr に警告を出す（例: `WARN: prompt is very large; consider trimming skills.`）。
+- 環境変数による制御案:
+  - `ONESHOT_MAX_PROMPT_CHARS` / `ONESHOT_MAX_PROMPT_TOKENS`: ソフトリミット（警告用）。
+  - `ONESHOT_STRICT_PROMPT_LIMIT=1`: 有効な場合は、リミット超過時に実行を中断し、`summary_report.md` に中断理由を書き出す。
+- 実装を進める場合は、まず「計測とログ出し」から入り、その後で中断ロジックや skills 側の要約戦略に広げてください。

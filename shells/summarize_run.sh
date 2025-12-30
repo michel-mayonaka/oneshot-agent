@@ -6,6 +6,7 @@ EVENTS="$RUN_DIR/events.jsonl"
 TIMELOG="$RUN_DIR/stderr_and_time.txt"
 PROMPT="$RUN_DIR/prompt.txt"
 LASTMSG="$RUN_DIR/last_message.md"
+SKILLS_USED="$RUN_DIR/skills_used.txt"
 
 OUT="$RUN_DIR/summary_report.md"
 
@@ -28,6 +29,17 @@ if [[ -f "$TIMELOG" ]]; then
   REAL_TIME="$(grep -E '^real ' "$TIMELOG" | tail -n 1 | awk '{print $2}' || true)"
   USER_TIME="$(grep -E '^user ' "$TIMELOG" | tail -n 1 | awk '{print $2}' || true)"
   SYS_TIME="$(grep -E '^sys '  "$TIMELOG" | tail -n 1 | awk '{print $2}' || true)"
+fi
+
+# 分表記（real）の計算
+TIME_REAL_DISPLAY="N/A"
+if [[ -n "${REAL_TIME:-}" ]]; then
+  REAL_MIN="$(awk 'BEGIN{printf "%.2f", rt/60}' rt="$REAL_TIME" 2>/dev/null || true)"
+  if [[ -n "$REAL_MIN" ]]; then
+    TIME_REAL_DISPLAY="${REAL_MIN}min (${REAL_TIME}s)"
+  else
+    TIME_REAL_DISPLAY="${REAL_TIME}s"
+  fi
 fi
 
 # git差分（git repoなら）
@@ -84,19 +96,20 @@ fi
 
 # ---- write report ----
 cat > "$OUT" <<EOF
-# Summary Report
+# Summary Report / サマリーレポート
 
-## Conclusion
+## Conclusion / 結論
 - Status: $( [[ -n "$ERROR_SNIPPET" ]] && echo "⚠️ has errors/warnings" || echo "✅ no obvious errors in stderr" )
 - Next action: fix the top 1-3 issues and rerun with the same prompt hash.
 
-## Run Metadata
+## Run Metadata / 実行メタデータ
 - run_dir: \`${RUN_DIR}\`
 - prompt_sha256: \`${PROMPT_SHA}\`
-- time_real: ${REAL_TIME:-N/A}s (user ${USER_TIME:-N/A}s / sys ${SYS_TIME:-N/A}s)
+- time_real: ${TIME_REAL_DISPLAY:-N/A} (user ${USER_TIME:-N/A}s / sys ${SYS_TIME:-N/A}s)
 - tokens: in=${IN_TOKENS:-N/A}, out=${OUT_TOKENS:-N/A}, total=${TOTAL_TOKENS:-N/A}
+- skills: $( [[ -f "$SKILLS_USED" ]] && paste -sd"," "$SKILLS_USED" || echo "N/A" )
 
-## Git Context
+## Git Context / Git コンテキスト
 - branch: ${BRANCH:-N/A}
 - commit: ${COMMIT:-N/A}
 - dirty_files:
@@ -105,19 +118,20 @@ $( [[ -n "$STATUS_SHORT" ]] && printf '```text\n%s\n```\n' "$STATUS_SHORT" || ec
 - diff_name_status:
 $( [[ -n "$DIFF_NAMESTAT" ]] && printf '```text\n%s\n```\n' "$DIFF_NAMESTAT" || echo "- (no diff or not a git repo)" )
 
-## Prompt (first 80 lines)
+## Prompt (first 80 lines) / プロンプト（先頭80行）
 $( [[ -f "$PROMPT" ]] && printf '```text\n%s\n```\n' "$(sed -n '1,80p' "$PROMPT")" || echo "- (missing prompt.txt)" )
 
-## Output (last_message or worklog head)
+## Output (last_message or worklog head) / 出力（最終メッセージ or 作業ログ先頭）
 $( [[ -n "$LASTMSG_HEAD" ]] && printf '```markdown\n%s\n```\n' "$LASTMSG_HEAD" || echo "- (no output captured)" )
 
-## Errors / Warnings (stderr tail grep)
+## Errors / Warnings (stderr tail grep) / エラー・警告（stderr 抜粋）
 $( [[ -n "$ERROR_SNIPPET" ]] && printf '```text\n%s\n```\n' "$ERROR_SNIPPET" || echo "- (none detected)" )
 
-## Artifacts
+## Artifacts / 生成物
 - events: $( [[ -f "$EVENTS" ]] && echo "\`events.jsonl\`" || echo "N/A" )
 - worklog: $( [[ -f "$RUN_DIR/worklog.md" ]] && echo "\`worklog.md\`" || [[ -f "$RUN_DIR/worklog.txt" ]] && echo "\`worklog.txt\`" || echo "N/A" )
 - stderr/time: $( [[ -f "$TIMELOG" ]] && echo "\`stderr_and_time.txt\`" || echo "N/A" )
+- skills_used: $( [[ -f "$SKILLS_USED" ]] && echo "\`skills_used.txt\`" || echo "N/A" )
 EOF
 
 echo "generated: $OUT"

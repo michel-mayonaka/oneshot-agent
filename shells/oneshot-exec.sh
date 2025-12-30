@@ -3,17 +3,29 @@ set -euo pipefail
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [-C <target_dir>] <prompt.txt or prompt string>
+Usage: $(basename "$0") [-C <target_dir>] [-s skill1,skill2] <prompt.txt or prompt string>
 
   -C DIR   Codex を実行するターゲットディレクトリ（既存リポジトリなど）。
            省略時は、このリポジトリ直下に playground/<run_id>/ を作成して使用します。
+  -s NAME  追加で読み込む optional skill 名（カンマ区切り可）。skills/optional/<NAME>.md を参照します。
+
+環境変数:
+  ONESHOT_SKILLS                追加で読み込む optional skill 名（カンマ区切り）。
+  ONESHOT_DISABLE_GLOBAL_SKILLS グローバルskills(global/)を無効化する場合に1を設定。
 EOF
 }
 
 TARGET_DIR=""
-while getopts "C:h" opt; do
+OPTIONAL_SKILLS_CLI=()
+while getopts "C:s:h" opt; do
   case "$opt" in
     C) TARGET_DIR="$OPTARG" ;;
+    s)
+      IFS=',' read -ra __parts <<< "$OPTARG"
+      for __name in "${__parts[@]}"; do
+        [[ -n "$__name" ]] && OPTIONAL_SKILLS_CLI+=("$__name")
+      done
+      ;;
     h) usage; exit 0 ;;
     *) usage; exit 1 ;;
   esac
@@ -42,12 +54,103 @@ mkdir -p "$TARGET_DIR"
 # どこで動かしたかをメタデータとして残す
 printf '%s\n' "$TARGET_DIR" > "$RUN_DIR/target_dir.txt"
 
-PROMPT_FILE="$RUN_DIR/prompt.txt"
-if [[ -f "$PROMPT" ]]; then
-  cp "$PROMPT" "$PROMPT_FILE"
-else
-  printf "%s" "$PROMPT" > "$PROMPT_FILE"
+# プロンプト（生／最終）と skills 使用状況
+RAW_PROMPT_FILE="$RUN_DIR/prompt.raw.txt"
+FINAL_PROMPT_FILE="$RUN_DIR/prompt.txt"
+SKILLS_USED_FILE="$RUN_DIR/skills_used.txt"
+
+if [[ -f "$SKILLS_USED_FILE" ]]; then
+  : > "$SKILLS_USED_FILE"
 fi
+
+# 生プロンプトを保存
+if [[ -f "$PROMPT" ]]; then
+  cp "$PROMPT" "$RAW_PROMPT_FILE"
+else
+  printf "%s" "$PROMPT" > "$RAW_PROMPT_FILE"
+fi
+
+# skills を解決して最終プロンプトを組み立てる
+GLOBAL_SKILL_FILES=()
+GLOBAL_SKILLS_DIR="$SCRIPT_DIR/../skills/global"
+if [[ -z "${ONESHOT_DISABLE_GLOBAL_SKILLS:-}" && -d "$GLOBAL_SKILLS_DIR" ]]; then
+  # 全ての *.md を読み込む（存在しない場合はスキップ）
+  while IFS= read -r f; do
+    GLOBAL_SKILL_FILES+=("$f")
+  done < <(ls "$GLOBAL_SKILLS_DIR"/*.md 2>/dev/null | sort || true)
+fi
+
+OPTIONAL_SKILL_NAMES=()
+# 環境変数 ONESHOT_SKILLS
+if [[ -n "${ONESHOT_SKILLS:-}" ]]; then
+  IFS=',' read -ra __env_parts <<< "$ONESHOT_SKILLS"
+  for __name in "${__env_parts[@]}"; do
+    [[ -n "$__name" ]] && OPTIONAL_SKILL_NAMES+=("$__name")
+  done
+fi
+# CLI -s
+for __name in "${OPTIONAL_SKILLS_CLI[@]}"; do
+  [[ -n "$__name" ]] && OPTIONAL_SKILL_NAMES+=("$__name")
+done
+
+OPTIONAL_SKILL_FILES=()
+OPTIONAL_SKILLS_DIR="$SCRIPT_DIR/../skills/optional"
+if [[ -d "$OPTIONAL_SKILLS_DIR" && ${#OPTIONAL_SKILL_NAMES[@]} -gt 0 ]]; then
+  for __name in "${OPTIONAL_SKILL_NAMES[@]}"; do
+    __file="$OPTIONAL_SKILLS_DIR/${__name}.md"
+    if [[ -f "$__file" ]]; then
+      OPTIONAL_SKILL_FILES+=("$__file")
+    else
+      echo "WARN: optional skill not found: ${__name}" >&2
+    fi
+  done
+fi
+
+# skills_used.txt に記録
+: > "$SKILLS_USED_FILE"
+for f in "${GLOBAL_SKILL_FILES[@]}"; do
+  rel="${f#"$SCRIPT_DIR/../"}"
+  echo "$rel" >> "$SKILLS_USED_FILE"
+done
+for f in "${OPTIONAL_SKILL_FILES[@]}"; do
+  rel="${f#"$SCRIPT_DIR/../"}"
+  echo "$rel" >> "$SKILLS_USED_FILE"
+done
+
+# 最終プロンプトを組み立て
+{
+  if [[ ${#GLOBAL_SKILL_FILES[@]} -gt 0 ]]; then
+    echo "# Agent Skills (global)"
+    for f in "${GLOBAL_SKILL_FILES[@]}"; do
+      rel="${f#"$SCRIPT_DIR/../"}"
+      echo ""
+      echo "## skill: ${rel}"
+      echo ""
+      cat "$f"
+      echo ""
+    done
+    echo ""
+  fi
+
+  if [[ ${#OPTIONAL_SKILL_FILES[@]} -gt 0 ]]; then
+    echo "# Agent Skills (optional)"
+    for f in "${OPTIONAL_SKILL_FILES[@]}"; do
+      rel="${f#"$SCRIPT_DIR/../"}"
+      echo ""
+      echo "## skill: ${rel}"
+      echo ""
+      cat "$f"
+      echo ""
+    done
+    echo ""
+  fi
+
+  echo "# User Prompt"
+  echo "----- USER PROMPT START -----"
+  cat "$RAW_PROMPT_FILE"
+  echo ""
+  echo "----- USER PROMPT END -----"
+} > "$FINAL_PROMPT_FILE"
 
 # JSONLをこのrun専用に保存（混ざらない）
 {
@@ -58,7 +161,7 @@ fi
     --full-auto \
     --model gpt-5.2-codex \
     --json \
-    - < "$PROMPT_FILE" \
+    - < "$FINAL_PROMPT_FILE" \
   | tee "$RUN_DIR/events.jsonl" >/dev/null
   popd >/dev/null
 } 2> "$RUN_DIR/stderr_and_time.txt"
