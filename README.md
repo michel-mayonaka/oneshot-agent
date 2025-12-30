@@ -42,6 +42,36 @@ bash shells/summarize_run.sh worklogs/<run_id>
 
 生成される `summary_report.md` には、使用トークン数・経過時間・Git 状態・プロンプト/出力の抜粋などが含まれます。
 
+## 他リポジトリへの組み込み例
+おすすめは「oneshot-agent はこのリポジトリで集中管理し、各プロジェクトにはラッパースクリプトだけ置く」運用です。
+
+1. 開発環境側で `ONESHOT_AGENT_ROOT` を設定:
+
+```bash
+export ONESHOT_AGENT_ROOT="$HOME/dev/oneshot-agent"  # このリポジトリのパス
+```
+
+2. 各プロジェクトに `scripts/oneshot.sh` を作成:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${ONESHOT_AGENT_ROOT:?ONESHOT_AGENT_ROOT is not set}"
+
+"$ONESHOT_AGENT_ROOT/shells/oneshot-exec.sh" -C "$(pwd)" "$@"
+```
+
+3. プロジェクト側での使い方:
+
+```bash
+# 既存リポジトリに対してエージェントを実行
+bash scripts/oneshot.sh "Add logging around DB queries"
+
+# プロジェクト固有のプロンプトファイルを用意して使う場合
+bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
+```
+
 ## ディレクトリ構成
 - ルート: `AGENTS.md`, `README.md`, `shells/`, `samples/`, `playground/`
 - `shells/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`）
