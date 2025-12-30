@@ -127,39 +127,94 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ -n "$REPORT_FILE" && -f "$REPORT_FILE" && -z "$PR_BODY_FILE" ]]; then
-  section="$(
-    awk -v heading="$HEADING" '
-      $0 ~ "^##[[:space:]]+" heading "[[:space:]]*$" {in=1; next}
-      in && /^##[[:space:]]+/ {exit}
-      in {print}
-    ' "$REPORT_FILE"
+  TMP_BODY="$(mktemp)"
+  PR_TITLE_FROM_REPORT="$(
+    python3 - "$REPORT_FILE" "$HEADING" "$TMP_BODY" <<'PY'
+import sys
+from pathlib import Path
+
+report_path = Path(sys.argv[1])
+heading = sys.argv[2]
+out_path = Path(sys.argv[3])
+
+text = report_path.read_text()
+lines = text.splitlines()
+
+blocks = []
+current = None
+for line in lines:
+    if line.strip() == f"## {heading}":
+        if current is not None:
+            blocks.append(current)
+        current = []
+        continue
+    if current is not None:
+        if line.startswith("## "):
+            blocks.append(current)
+            current = None
+            continue
+        current.append(line)
+if current is not None:
+    blocks.append(current)
+
+def parse_block(block):
+    title = ""
+    body_lines = []
+    in_body = False
+    for line in block:
+        if line.startswith("タイトル:"):
+            title = line.replace("タイトル:", "", 1).strip()
+            continue
+        if line.startswith("本文:") or line.startswith("説明:"):
+            body_lines.append(line.split(":", 1)[1].strip())
+            in_body = True
+            continue
+        if in_body:
+            body_lines.append(line)
+    if not body_lines:
+        body_lines = block
+    body = "\n".join(body_lines).strip()
+    return title, body
+
+def is_placeholder(title, body):
+    bad = ["<", ">", "簡潔なPRタイトル", "注意:"]
+    if not title:
+        return True
+    if any(x in title for x in bad):
+        return True
+    if any(x in body for x in bad):
+        return True
+    return False
+
+selected_title = ""
+selected_body = ""
+for block in blocks[::-1]:
+    title, body = parse_block(block)
+    if is_placeholder(title, body):
+        continue
+    selected_title = title
+    selected_body = body
+    break
+
+if selected_body:
+    out_path.write_text(selected_body + "\n")
+    print(selected_title)
+else:
+    out_path.write_text("")
+    print("")
+PY
   )"
 
-  if [[ -n "$section" ]]; then
+  if [[ -n "$PR_TITLE_FROM_REPORT" ]]; then
     if [[ -z "$PR_TITLE" ]]; then
-      PR_TITLE="$(printf '%s\n' "$section" | sed -n 's/^タイトル:[[:space:]]*//p' | head -n 1)"
+      PR_TITLE="$PR_TITLE_FROM_REPORT"
     fi
-
-    body_text="$(
-      printf '%s\n' "$section" | awk '
-        found {print}
-        /^本文:[[:space:]]*/ {
-          sub(/^本文:[[:space:]]*/, "");
-          print;
-          found=1;
-        }
-      '
-    )"
-
-    if [[ -z "$body_text" ]]; then
-      body_text="$section"
-    fi
-
-    if [[ -n "$body_text" ]]; then
-      TMP_BODY="$(mktemp)"
-      printf '%s\n' "$body_text" > "$TMP_BODY"
+    if [[ -s "$TMP_BODY" ]]; then
       PR_BODY_FILE="$TMP_BODY"
     fi
+  else
+    rm -f "$TMP_BODY"
+    TMP_BODY=""
   fi
 fi
 

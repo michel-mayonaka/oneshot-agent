@@ -61,6 +61,7 @@ while [[ $# -gt 0 ]]; do
   esac
   done
 
+# 必須引数の検証
 if [[ -z "$SPEC" ]]; then
   usage
   exit 1
@@ -71,8 +72,10 @@ if [[ ! -f "$SPEC" ]]; then
   exit 1
 fi
 
+# spec パス起点の解決用ディレクトリ
 SPEC_DIR="$(cd "$(dirname "$SPEC")" && pwd)"
 
+# 文字列前後の空白を削る
 trim() {
   local s="$1"
   s="${s#"${s%%[![:space:]]*}"}"
@@ -80,6 +83,7 @@ trim() {
   printf '%s' "$s"
 }
 
+# __INPUT_<KEY>__ の置換キーを管理
 set_input() {
   local k="$1"
   local v="$2"
@@ -94,6 +98,7 @@ set_input() {
   INPUT_VALS+=("$v")
 }
 
+# spec から読み取る設定値
 NAME=""
 PROMPT_FILE=""
 PROMPT_TEXT=""
@@ -111,6 +116,7 @@ IN_SKILLS_BLOCK=0
 IN_PROMPT_TEXT_BLOCK=0
 PROMPT_TEXT_INDENT=""
 
+# spec を最小限パース（フラット YAML）
 while IFS= read -r line || [[ -n "$line" ]]; do
   # strip comments
   line="${line%%#*}"
@@ -175,11 +181,13 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
   done < "$SPEC"
 
+# name が無い場合はファイル名から推定
 if [[ -z "$NAME" ]]; then
   base="$(basename "$SPEC")"
   NAME="${base%.*}"
 fi
 
+# prompt 指定の整合性チェック
 if [[ -n "$PROMPT_FILE" && -n "$PROMPT_TEXT" ]]; then
   echo "Specify only one of prompt_file or prompt_text" >&2
   exit 1
@@ -190,6 +198,7 @@ if [[ -z "$PROMPT_FILE" && -z "$PROMPT_TEXT" ]]; then
   exit 1
 fi
 
+# ターゲットディレクトリの決定
 if [[ -z "$TARGET_DIR" ]]; then
   if [[ -n "${ONESHOT_PROJECT_ROOT:-}" ]]; then
     TARGET_DIR="$ONESHOT_PROJECT_ROOT"
@@ -200,13 +209,15 @@ if [[ -z "$TARGET_DIR" ]]; then
   fi
 fi
 
+# worktree デフォルト（true）
 if [[ -z "$USE_WORKTREE" ]]; then
   USE_WORKTREE="true"
 fi
 
+# PR有効時は pr-draft スキルを自動追加
 if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
   already=0
-  for s in "${SKILLS[@]}"; do
+  for s in "${SKILLS[@]:-}"; do
     if [[ "$s" == "pr-draft" ]]; then
       already=1
       break
@@ -217,6 +228,7 @@ if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
   fi
 fi
 
+# スクリプト/ルートの解決
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
 ONESHOT="$ROOT_DIR/core/oneshot-exec.sh"
@@ -226,6 +238,7 @@ if [[ ! -x "$ONESHOT" ]]; then
   exit 1
 fi
 
+# run_id とログ先を確定（早めにログを開始）
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
 RUNS_DIR="$ROOT_DIR/worklogs/$NAME"
 mkdir -p "$RUNS_DIR"
@@ -243,6 +256,7 @@ echo "run_oneshot_log=$RUN_ONESHOT_LOG" >&3
 exec >>"$RUN_ONESHOT_LOG" 2>&1
 trap 'echo "ERROR line=$LINENO cmd=$BASH_COMMAND" >&2' ERR
 
+# 主要な結果を標準出力にも出すためのヘルパー
 emit() {
   printf '%s\n' "$*" | tee -a "$RUN_ONESHOT_LOG" >&3
 }
@@ -251,6 +265,7 @@ TMP_DIR="$(mktemp -d)"
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
+# prompt ファイル/テキストの解決
 PROMPT_PATH=""
 if [[ -n "$PROMPT_FILE" ]]; then
   if [[ "$PROMPT_FILE" = /* ]]; then
@@ -315,16 +330,19 @@ PY
   PROMPT_PATH="$PROMPT_TMP"
 fi
 
+# レンダリングのみ（置換結果の出力）
 if [[ $RENDER_ONLY -eq 1 ]]; then
   cat "$PROMPT_PATH"
   exit 0
 fi
 
+# worktree 作成対象のリポジトリ
 REPO_DIR="$TARGET_DIR"
 
 WORKTREE_DIR=""
 WORKTREE_BRANCH=""
 WORKTREE_BASE=""
+# worktree を作成してターゲットを差し替え
 if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
   WORKTREE_SCRIPT="$ROOT_DIR/core/create-worktree.sh"
   if [[ ! -x "$WORKTREE_SCRIPT" ]]; then
@@ -349,22 +367,26 @@ if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
   TARGET_DIR="$WORKTREE_DIR"
 fi
 
+# optional skills の引数生成
 SKILLS_ARG=()
 if [[ ${#SKILLS[@]} -gt 0 ]]; then
   SKILLS_ARG=( -s "$(IFS=,; echo "${SKILLS[*]}")" )
 fi
 
+# oneshot 実行コマンドを配列で組み立て
 ONESHOT_CMD=( "$ONESHOT" -C "$TARGET_DIR" )
 if [[ ${#SKILLS_ARG[@]} -gt 0 ]]; then
   ONESHOT_CMD+=( "${SKILLS_ARG[@]}" )
 fi
 ONESHOT_CMD+=( "$PROMPT_PATH" )
 
+# グローバル skills 無効化フラグ
 DISABLE_GLOBAL_ENV=()
 if [[ "$DISABLE_GLOBAL" == "true" || "$DISABLE_GLOBAL" == "1" ]]; then
   DISABLE_GLOBAL_ENV=( ONESHOT_DISABLE_GLOBAL_SKILLS=1 )
 fi
 
+# oneshot 本体実行（失敗時の出力をログへ）
 if [[ ${#DISABLE_GLOBAL_ENV[@]} -gt 0 ]]; then
   set +e
   OUTPUT="$(ONESHOT_RUNS_DIR="$RUNS_DIR" \
@@ -387,6 +409,7 @@ if [[ ${ONESHOT_STATUS:-0} -ne 0 ]]; then
   emit "oneshot_exit_code=$ONESHOT_STATUS"
   exit "$ONESHOT_STATUS"
 fi
+# run-oneshot の補助出力
 if [[ -n "$WORKTREE_DIR" ]]; then
   emit "worktree_dir=$WORKTREE_DIR"
   if [[ -n "$WORKTREE_BRANCH" ]]; then
@@ -394,6 +417,7 @@ if [[ -n "$WORKTREE_DIR" ]]; then
   fi
 fi
 
+# inputs のメタ保存
 RUN_DIR="$(printf '%s\n' "$OUTPUT" | awk -F= '/^run_dir=/{print $2}' | tail -n 1)"
 if [[ -n "$RUN_DIR" ]]; then
   for i in "${!INPUT_KEYS[@]}"; do
@@ -403,6 +427,7 @@ if [[ -n "$RUN_DIR" ]]; then
   done
 fi
 
+# PR作成（有効時のみ）
 if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
   PR_SCRIPT="$ROOT_DIR/core/create-pr.sh"
   if [[ ! -x "$PR_SCRIPT" ]]; then
