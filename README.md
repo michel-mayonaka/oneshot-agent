@@ -12,9 +12,9 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 任意のプロンプト文字列、またはプロンプトファイルを渡して実行します。
 
 ```bash
-bash oneshot-exec.sh "Create a small CLI tool in Go"
+bash shells/oneshot-exec.sh "Create a small CLI tool in Go"
 # または
-bash oneshot-exec.sh prompt-jp.md
+bash shells/oneshot-exec.sh samples/prompts/prompt-jp.md
 ```
 
 各実行は一意な `run_id` を持ち、`worklogs/<run_id>/` に以下のファイルが保存されます:
@@ -27,13 +27,16 @@ bash oneshot-exec.sh prompt-jp.md
 特定の run に対してサマリーレポートを生成します。
 
 ```bash
-bash summarize_run.sh worklogs/<run_id>
+bash shells/summarize_run.sh worklogs/<run_id>
 ```
 
 生成される `summary_report.md` には、使用トークン数・経過時間・Git 状態・プロンプト/出力の抜粋などが含まれます。
 
 ## ディレクトリ構成
-- ルート: `oneshot-exec.sh`, `summarize_run.sh`, `prompt-en.md`, `prompt-jp.md`, `AGENTS.md`
+- ルート: `AGENTS.md`, `README.md`, `shells/`, `samples/`, `playground/`
+- `shells/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`）
+- `samples/prompts/`: サンプルプロンプト（現在は `prompt-jp.md` のみ）
 - `worklogs/`: 各 run のログ・レポート（自動生成。通常は手動編集しない）
+- `playground/`: サンプルプロンプトなどで生成された成果物を置く作業用ディレクトリ（`.gitignore` 対象）
 
 より詳細な貢献ルールや運用方針は `AGENTS.md` を参照してください。

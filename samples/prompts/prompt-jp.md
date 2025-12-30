@@ -1,5 +1,7 @@
 「Animal Tower Battle」に近い、画像アセットのみ（アニメーションなし）のブラウザ専用ゲームを作成してください。
 
+すべての成果物（HTML/CSS/JS/JSON/README など）は、このリポジトリ直下ではなく `playground/animal-tower/` ディレクトリを作成して、その中に生成してください。
+
 技術的制約:
 - HTML + Canvas + JavaScript を使用する。
 - 物理演算には、CDNから読み込む Matter.js を使用する（ビルドツール不要）。
@@ -21,4 +23,3 @@
 
 README:
 - ローカルでの起動方法として「python -m http.server」でサーバを起動してブラウザで開く手順を書く。
-

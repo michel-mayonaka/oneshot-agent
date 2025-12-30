@@ -4,15 +4,19 @@
 
 ## プロジェクト構成
 - ルート:
+  - `AGENTS.md`, `README.md`
+  - `shells/`: 実行・集計用シェルスクリプト
+  - `samples/prompts/`: エージェントに渡すベースプロンプトのテンプレート
+  - `playground/`: サンプルプロンプトなどで生成された成果物を置く作業用ディレクトリ（`.gitignore` 対象）
+- `shells/`:
   - `oneshot-exec.sh`: 単一プロンプトを Codex CLI に投げる実行スクリプト
   - `summarize_run.sh`: 実行結果 (`events.jsonl` など) からサマリーレポートを生成
-  - `prompt-en.md`, `prompt-jp.md`: エージェントに渡すベースプロンプトのテンプレート
 - `worklogs/`: 各 run ごとのログ・プロンプト・レポートを保存（基本は自動生成。手動編集しない）
 
 ## 実行・開発コマンド
-- `bash oneshot-exec.sh "<prompt>"`  
-  文字列またはプロンプトファイルパスを渡して 1 回分のエージェント実行を行い、`worklogs/` に成果物を保存します。
-- `bash summarize_run.sh worklogs/<run_id>`  
+- `bash shells/oneshot-exec.sh "<prompt or path>"`  
+  文字列またはプロンプトファイルパス（例: `samples/prompts/prompt-jp.md`）を渡して 1 回分のエージェント実行を行い、`worklogs/` に成果物を保存します。
+- `bash shells/summarize_run.sh worklogs/<run_id>`  
   指定 run の要約レポート (`summary_report.md`) を生成・更新します。
 - Codex CLI 前提のため、`codex` コマンドが `PATH` にあることを確認してください。
 
@@ -23,7 +27,7 @@
 
 ## テスト・検証方針
 - 変更後は最低でも以下を手動実行して確認してください:
-  - `bash oneshot-exec.sh prompt-jp.md`
+  - `bash shells/oneshot-exec.sh samples/prompts/prompt-jp.md`
   - 生成された `worklogs/<run_id>/summary_report.md` を開き、想定どおりの情報が出力されているか確認
 - 既存の引数インターフェース（位置引数 / 必須オプション）を壊さないよう注意してください。
 
@@ -35,4 +39,3 @@
   - 確認に使ったコマンド例
   を短く書いてください。
 - `worklogs/` の生成物は基本的にコミット対象から除外し、スクリプトやプロンプトの変更に集中してください。
-

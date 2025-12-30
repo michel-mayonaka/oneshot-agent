@@ -3,8 +3,11 @@ set -euo pipefail
 
 PROMPT="${1:?usage: run <prompt.txt or prompt string>}"
 
+# スクリプト自身のディレクトリ（shells/）を解決
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
-RUN_DIR="./worklogs/$RUN_ID"
+RUN_DIR="$SCRIPT_DIR/../worklogs/$RUN_ID"
 mkdir -p "$RUN_DIR"
 
 PROMPT_FILE="$RUN_DIR/prompt.txt"
@@ -15,7 +18,6 @@ else
 fi
 
 # JSONLをこのrun専用に保存（混ざらない）
-# turn.completed に usage が入る :contentReference[oaicite:5]{index=5}
 {
   /usr/bin/time -p \
   codex exec \
@@ -36,4 +38,4 @@ jq -c 'select(.type=="turn.completed") | .usage' "$RUN_DIR/events.jsonl" | tail 
 
 echo "run_dir=$RUN_DIR"
 
-./summarize_run.sh "$RUN_DIR"
+"$SCRIPT_DIR/summarize_run.sh" "$RUN_DIR"
