@@ -4,23 +4,29 @@
 
 ## プロジェクト構成
 - ルート:
-  - `AGENTS.md`, `README.md`
+  - `AGENTS.md`, `README.md`, `Makefile`
   - `core/`: 実行・集計用シェルスクリプト
   - `specs/`: run-oneshot 用の YAML 定義
   - `skills/global/`: すべての run に自動で含めたい共通ガイド
   - `skills/optional/`: 実行時に明示指定して読み込むスキル群
 - `core/`:
   - `oneshot-exec.sh`: 単一プロンプトを Codex CLI に投げる実行スクリプト
+  - `run-oneshot.sh`: spec を読み取り、inputs/skills/worktree/PR を束ねて実行
   - `summarize_run.sh`: 実行結果 (`events.jsonl` など) からサマリーレポートを生成
+  - `create-worktree.sh` / `remove-worktree.sh`: git worktree の作成・削除
+  - `create-pr.sh`: report.md などから PR を作成（GitHub CLI 必須）
+  - `translate-worklog-to-ja.sh`: worklog.md を日本語に翻訳
 - `worklogs/`: 各 run ごとのログ・プロンプト・レポートを保存（基本は自動生成。手動編集しない）
 
 ## 実行・開発コマンド
 - `bash core/oneshot-exec.sh "<prompt or path>"`  
-  文字列または spec ファイルパスを渡して 1 回分のエージェント実行を行い、`worklogs/<spec>/<run_id>/artifacts/` に生成物を作りつつ、`worklogs/` にログを保存します。
+  文字列またはプロンプトファイルパスを渡して 1 回分のエージェント実行を行い、`worklogs/<spec>/<run_id>/artifacts/` に生成物を作りつつ、`worklogs/` にログを保存します。
 - `bash core/oneshot-exec.sh -C /path/to/project "<prompt or path>"`  
   既存プロジェクトディレクトリをカレントディレクトリとして Codex を実行します（ログは引き続きハーネス側の `worklogs/` に保存）。
-- `bash core/summarize_run.sh worklogs/<spec>/<run_id>`  
+- `bash core/summarize_run.sh worklogs/<run_id>` / `bash core/summarize_run.sh worklogs/<spec>/<run_id>`  
   指定 run の要約レポート (`report.md`) を生成・更新します。
+- `bash core/run-oneshot.sh --spec specs/doc-audit.yml`  
+  spec に基づく実行（skills / inputs / worktree / PR の一括処理）。
 - Codex CLI 前提のため、`codex` コマンドが `PATH` にあることを確認してください。
 
 ## コーディングスタイル & 命名

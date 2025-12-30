@@ -6,6 +6,7 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 ## 前提条件
 - Codex CLI (`codex` コマンド) がインストール済みで `PATH` に通っていること
 - `bash`, `jq`, `git` が利用可能であること（`jq` はサマリ生成で使用、無い場合は一部情報が省略されます）
+- PR 作成を使う場合は GitHub CLI (`gh`) が必要
 
 ## 使い方
 ### 1. 0→1 用（デフォルト）
@@ -14,8 +15,8 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 
 ```bash
 bash core/oneshot-exec.sh "Create a small CLI tool in Go"
-# またはサンプルプロンプトを使う場合
-bash core/run-oneshot.sh --spec specs/doc-audit.yml
+# 既存リポジトリで実行する場合
+bash core/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use tool X"
 ```
 
 各実行は一意な `run_id` を持ち、`worklogs/<spec>/<run_id>/` に以下のように保存されます:
@@ -24,6 +25,8 @@ bash core/run-oneshot.sh --spec specs/doc-audit.yml
 - `logs/`: `events.jsonl`, `worklog.md`, `worklog.commands.md`, `commands.jsonl`, `stderr_and_time.txt`, `usage.json`
 - `inputs/`: `inputs.txt` など参照入力
 - `artifacts/`: 生成物
+
+※ `core/run-oneshot.sh` 経由の実行は `worklogs/<spec名>/<run_id>/` 配下に保存されます。
 
 ### 2. 既存リポジトリに対して実行する（-C）
 既存プロジェクトのディレクトリを `-C` で指定すると、そのディレクトリをカレントディレクトリとして Codex を実行できます。
@@ -47,6 +50,7 @@ bash core/summarize_run.sh worklogs/<spec>/<run_id>
 YAML の spec を `core/run-oneshot.sh` に渡して実行できます。`worklogs/<spec名>/<run_id>/` にログを格納します。
 
 ```bash
+bash core/run-oneshot.sh --spec specs/doc-audit.yml
 make doc-audit
 make doc-fix
 # 任意のレポートを使う場合:
@@ -55,6 +59,23 @@ make test
 ```
 
 spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として spec 内に書きます。
+
+### 5. run-oneshot の主な機能
+- inputs 置換: `--input key=relative/path` で `__INPUT_<KEY>__` を置換（KEY は大文字化）。パスは `ONESHOT_AGENT_ROOT` 基準。
+- audit_report 置換: `--audit-report <file>` で `__INPUT_AUDIT_REPORT__` を置換。
+- render-only: `--render-only` で置換結果のみ出力して終了。
+- worktree: `worktree` 未指定時は `true`（`worktree: true` で `worklogs/<spec>/<run_id>/worktree` に worktree を作成して実行）。
+- worktree 削除: `core/remove-worktree.sh` で run_id から削除可能。
+- PR 作成: `pr: true` で `core/create-pr.sh` を実行（GitHub CLI が必要）。PR 有効時は `pr-draft` スキルを自動追加。
+- global skills 無効化: `disable_global_skills: true` で `skills/global` を無効化。
+
+### 6. oneshot-exec の補助オプション/環境変数
+- `-s foo,bar`: `skills/optional/foo.md` 等を追加読み込み。
+- `ONESHOT_SKILLS`: 追加スキル（カンマ区切り）。
+- `ONESHOT_DISABLE_GLOBAL_SKILLS=1`: global skills を無効化。
+- `ONESHOT_AUTO_TRANSLATE_WORKLOG=1`: 実行後に `worklog.md` を日本語翻訳。
+- `ONESHOT_TRANSLATE_MODEL`: 翻訳用モデル指定（既定: `gpt-5.2`）。
+  - 注: 翻訳スクリプトは `worklogs/<spec>/<run_id>/worklog.md` を参照します（ログ本体は `worklogs/<spec>/<run_id>/logs/worklog.md` に出力されます）。
 
 ### Spec 仕様（概要）
 最小構成:
@@ -67,8 +88,17 @@ skills:
 ```
 
 任意キー:
+- `prompt_file`: `prompt_text` の代わりにファイルパスを指定
 - `target_dir`: 実行ディレクトリ（未指定時は `ONESHOT_PROJECT_ROOT` → `PROJECT_ROOT` → `PWD`）
+- `worktree`: `true`/`1` で worktree 実行
+- `pr`: `true`/`1` で PR 作成
+- `pr_title`: PR タイトル
+- `pr_body_file`: PR 本文ファイル
+- `pr_draft`: `true`/`1` で Draft PR
 - `disable_global_skills`: `true`/`1` で global skills を無効化
+
+注意:
+- `prompt_file` と `prompt_text` はどちらか一方のみ指定。
 
 inputs の置換（CLI）:
 - `--input key=relative/path` で指定したファイル内容を `__INPUT_<KEY>__` に展開します（KEYは大文字化）。
@@ -106,7 +136,7 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 
 ## ディレクトリ構成
 - ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `skills/`
-- `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`, `run-oneshot.sh`）
+- `core/`: 実行スクリプト（`oneshot-exec.sh`, `run-oneshot.sh`, `summarize_run.sh`, `create-worktree.sh`, `remove-worktree.sh`, `create-pr.sh`, `translate-worklog-to-ja.sh`）
 - `specs/`: run-oneshot 用の YAML 定義
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
 - `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル
@@ -124,7 +154,7 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
   - 実行時には、これらの Markdown をユーザープロンプトの前に連結した上で `prompt.txt` を生成し、`skills_used.txt` に使用スキルを記録する方針です。
 
 - **プロンプトサイズの計測とバリデーション**
-  - `prompt.txt` の文字数・概算トークン数を計測して `prompt_stats.txt` に保存し、`report.md` にもサイズ情報を載せる構想です。
+  - `prompt.txt` の文字数・概算トークン数を計測して `prompt_stats.txt` に保存し、`report.md` にもサイズ情報を載せる構想です（現状は未実装）。
   - 閾値は環境変数（例: `ONESHOT_MAX_PROMPT_CHARS`, `ONESHOT_MAX_PROMPT_TOKENS`）で調整し、大きすぎる場合は警告、厳格モード（`ONESHOT_STRICT_PROMPT_LIMIT=1`）では実行中断も検討しています。
 
 実装を進める際は、まずこの README と `AGENTS.md` に記載した設計方針に沿って進めてください。
