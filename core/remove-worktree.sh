@@ -9,7 +9,7 @@ Options:
   --repo          Gitリポジトリのルートパス
   --run-id        run_id（worklogs/<run_id> を対象にする）
   --path          worktree のパスを直接指定
-  --worktree-root run_id から解決する場合のルート（省略時は <repo_dir>/worktrees）
+  --worktree-root run_id から解決する場合のルート（省略時は <repo_dir>/worklogs）
   --worklogs-root 互換用（worktree-rootの別名）
   --force         worktree が未クリーンでも削除する
 USAGE
@@ -80,7 +80,7 @@ if [[ -n "$RUN_ID" ]]; then
     if [[ -n "$WORKLOGS_ROOT" ]]; then
       WORKTREE_ROOT="$WORKLOGS_ROOT"
     else
-      WORKTREE_ROOT="$REPO_DIR/worktrees"
+      WORKTREE_ROOT="$REPO_DIR/worklogs"
     fi
   fi
   WORKTREE_DIR="$WORKTREE_ROOT/$RUN_ID/worktree"

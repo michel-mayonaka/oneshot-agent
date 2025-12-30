@@ -10,7 +10,7 @@ Options:
   --run-id        run_id（例: 20250101-010203-12345）
   --spec-name     spec名（yml名など）
   --base          ベースブランチ（省略時は現在のブランチ）
-  --worktree-root worktree作成先のルート（省略時は <repo_dir>/worktrees）
+  --worktree-root worktree作成先のルート（省略時は <repo_dir>/worklogs）
   --worklogs-root 互換用（worktree-rootの別名）
 USAGE
 }
@@ -74,7 +74,7 @@ if [[ -z "$WORKTREE_ROOT" ]]; then
   if [[ -n "$WORKLOGS_ROOT" ]]; then
     WORKTREE_ROOT="$WORKLOGS_ROOT"
   else
-    WORKTREE_ROOT="$REPO_DIR/worktrees"
+    WORKTREE_ROOT="$REPO_DIR/worklogs"
   fi
 fi
 

@@ -323,7 +323,7 @@ if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
     --repo "$TARGET_DIR" \
     --run-id "$RUN_ID" \
     --spec-name "$NAME" \
-    --worktree-root "$ROOT_DIR/worktrees")"
+    --worktree-root "$RUNS_DIR")"
   emit "$WORKTREE_OUTPUT"
 
   WORKTREE_DIR="$(printf '%s\n' "$WORKTREE_OUTPUT" | awk -F= '/^worktree_dir=/{print $2}' | tail -n 1)"
