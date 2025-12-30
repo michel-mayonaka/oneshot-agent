@@ -17,8 +17,8 @@ YAML spec (flat):
 Notes:
 - prompt_file と prompt_text はどちらか一方を指定。
 - target_dir 未指定時は ONESHOT_PROJECT_ROOT -> PROJECT_ROOT -> PWD の順で使用。
-- inputs で指定した値は __INPUT_<KEY>__ に置換される（KEYは大文字化）。
-- __AUDIT_REPORT__ は互換のために残すが、inputs の利用を推奨。
+- inputs は __INPUT_<KEY>__ に置換される（KEYは大文字化）。
+- --input のパスは ONESHOT_AGENT_ROOT からの相対パスとして解決される。
 USAGE
 }
 
@@ -110,11 +110,6 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     IN_SKILLS_BLOCK=1
     continue
   fi
-  if [[ "$line" == inputs:* ]]; then
-    IN_INPUTS_BLOCK=1
-    continue
-  fi
-
   if [[ $IN_SKILLS_BLOCK -eq 1 ]]; then
     if [[ "$line" == -* ]]; then
       skill="$(trim "${line#-}")"
@@ -124,28 +119,6 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       IN_SKILLS_BLOCK=0
     fi
   fi
-  if [[ $IN_INPUTS_BLOCK -eq 1 ]]; then
-    if [[ "$line" =~ ^[a-zA-Z0-9_]+: ]]; then
-      key="${line%%:*}"
-      val="$(trim "${line#*:}")"
-      case "$key" in
-        name|prompt_file|prompt_text|skills|target_dir|disable_global_skills|inputs)
-          IN_INPUTS_BLOCK=0
-          ;;
-        *)
-          val="${val%\"}"
-          val="${val#\"}"
-          val="${val%\'}"
-          val="${val#\'}"
-          set_input "$key" "$val"
-          continue
-          ;;
-      esac
-    else
-      IN_INPUTS_BLOCK=0
-    fi
-  fi
-
   if [[ "$line" =~ ^[a-zA-Z0-9_]+: ]]; then
     key="${line%%:*}"
     val="$(trim "${line#*:}")"
@@ -155,7 +128,6 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       prompt_text) PROMPT_TEXT="$val" ;;
       target_dir) TARGET_DIR="$val" ;;
       disable_global_skills) DISABLE_GLOBAL="$val" ;;
-      inputs) IN_INPUTS_BLOCK=1 ;;
       *) : ;;
     esac
   fi
@@ -233,33 +205,14 @@ if [[ -f "$PROMPT_PATH" ]]; then
     k="${INPUT_KEYS[$i]}"
     v="${INPUT_VALS[$i]}"
     resolved_path=""
-    if [[ "$v" == from_run:* ]]; then
-      ref="${v#from_run:}"
-      spec="${ref%%:*}"
-      rest="${ref#*:}"
-      run_id="${rest%%:*}"
-      rel_path="${rest#*:}"
-      if [[ -z "$spec" || -z "$run_id" || -z "$rel_path" ]]; then
-        echo "Invalid from_run format: $v" >&2
-        exit 1
-      fi
-      if [[ "$run_id" == "latest" ]]; then
-        if [[ -d "$ROOT_DIR/worklogs/$spec" ]]; then
-          run_id="$(ls -1 "$ROOT_DIR/worklogs/$spec" | sort | tail -n 1)"
-        else
-          run_id=""
-        fi
-      fi
-      resolved_path="$ROOT_DIR/worklogs/$spec/$run_id/$rel_path"
-      if [[ -z "$run_id" || ! -f "$resolved_path" ]]; then
-        echo "Referenced run artifact not found: $v" >&2
-        exit 1
-      fi
-    else
+    if [[ -z "${ONESHOT_AGENT_ROOT:-}" ]]; then
+      echo "ONESHOT_AGENT_ROOT is required for --input path resolution" >&2
+      exit 1
+    fi
+    resolved_path="$ONESHOT_AGENT_ROOT/$v"
+    if [[ -z "$resolved_path" || ! -f "$resolved_path" ]]; then
       if [[ -f "$v" ]]; then
         resolved_path="$v"
-      elif [[ -f "$ROOT_DIR/$v" ]]; then
-        resolved_path="$ROOT_DIR/$v"
       fi
     fi
     if [[ -z "$resolved_path" ]]; then

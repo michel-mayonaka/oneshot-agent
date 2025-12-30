@@ -72,18 +72,10 @@ skills:
 任意キー:
 - `target_dir`: 実行ディレクトリ（未指定時は `ONESHOT_PROJECT_ROOT` → `PROJECT_ROOT` → `PWD`）
 - `disable_global_skills`: `true`/`1` で global skills を無効化
-- `inputs`: 文字列またはファイル内容をプロンプトに挿入するための入力
 
-inputs の置換:
-- `__INPUT_<KEY>__` が入力内容に置換されます（KEYは大文字化）。
-- 値がファイルパスならファイル内容を埋め込み、文字列ならそのまま埋め込みます。
-- 他の run の成果物を参照する場合は `from_run:<spec>:<run_id|latest>:<path>` を使用します。
-
-例:
-```yaml
-inputs:
-  audit_report: from_run:doc-audit:latest:summary_report.md
-```
+inputs の置換（CLI）:
+- `--input key=relative/path` で指定したファイル内容を `__INPUT_<KEY>__` に展開します（KEYは大文字化）。
+- 相対パスは `ONESHOT_AGENT_ROOT` を基準に解決されます。
 
 ## 他リポジトリへの組み込み例
 おすすめは「oneshot-agent はこのリポジトリで集中管理し、各プロジェクトにはラッパースクリプトだけ置く」運用です。

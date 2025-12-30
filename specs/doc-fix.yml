@@ -14,7 +14,5 @@ prompt_text: |
   ```
   __INPUT_AUDIT_REPORT__
   ```
-inputs:
-  audit_report: from_run:doc-audit:latest:summary_report.md
 # target_dir: /path/to/project
 # disable_global_skills: true
