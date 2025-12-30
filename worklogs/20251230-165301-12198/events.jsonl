@@ -1,6 +1,0 @@
-{"type":"thread.started","thread_id":"019b6e3f-02cf-7dc0-bf8a-d92808470229"}
-{"type":"turn.started"}
-{"type":"item.completed","item":{"id":"item_0","type":"reasoning","text":"**Preparing to ask for location**"}}
-{"type":"item.completed","item":{"id":"item_1","type":"web_search","query":"weather: United States"}}
-{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"今日（12月30日）の米国の天気は、晴れ時々くもりで、最高10°C／最低-2°Cです。  \nお住まいの市区町村を教えていただければ、その地点の詳細をお伝えします。"}}
-{"type":"turn.completed","usage":{"input_tokens":8821,"cached_input_tokens":7680,"output_tokens":104}}
