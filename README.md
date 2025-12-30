@@ -54,6 +54,9 @@ make doc-fix
 make test
 ```
 
+REPORT には `summarize_run.sh` が生成する `report.md` を指定します。  
+※ `Makefile` のエラーメッセージ例は `summary_report.md` になっているため、表示が一致しない場合は要確認です。
+
 spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として spec 内に書きます。
 
 ### Spec 仕様（概要）
@@ -106,7 +109,7 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 
 ## ディレクトリ構成
 - ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `skills/`
-- `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`, `run-oneshot.sh`）
+- `core/`: 実行スクリプト（`oneshot-exec.sh`, `run-oneshot.sh`, `summarize_run.sh`, `create-worktree.sh`, `remove-worktree.sh`, `create-pr.sh`, `translate-worklog-to-ja.sh`）
 - `specs/`: run-oneshot 用の YAML 定義
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
 - `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル
