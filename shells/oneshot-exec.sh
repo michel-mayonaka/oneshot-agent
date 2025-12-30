@@ -88,22 +88,28 @@ if [[ -n "${ONESHOT_SKILLS:-}" ]]; then
     [[ -n "$__name" ]] && OPTIONAL_SKILL_NAMES+=("$__name")
   done
 fi
-# CLI -s
+# CLI -s（配列未定義でもコケないよう、一時的に set +u）
+set +u
 for __name in "${OPTIONAL_SKILLS_CLI[@]}"; do
   [[ -n "$__name" ]] && OPTIONAL_SKILL_NAMES+=("$__name")
 done
+set -u
 
 OPTIONAL_SKILL_FILES=()
 OPTIONAL_SKILLS_DIR="$SCRIPT_DIR/../skills/optional"
-if [[ -d "$OPTIONAL_SKILLS_DIR" && ${#OPTIONAL_SKILL_NAMES[@]} -gt 0 ]]; then
-  for __name in "${OPTIONAL_SKILL_NAMES[@]}"; do
-    __file="$OPTIONAL_SKILLS_DIR/${__name}.md"
-    if [[ -f "$__file" ]]; then
-      OPTIONAL_SKILL_FILES+=("$__file")
-    else
-      echo "WARN: optional skill not found: ${__name}" >&2
-    fi
-  done
+if [[ -d "$OPTIONAL_SKILLS_DIR" ]]; then
+  set +u
+  if [[ ${#OPTIONAL_SKILL_NAMES[@]} -gt 0 ]]; then
+    for __name in "${OPTIONAL_SKILL_NAMES[@]}"; do
+      __file="$OPTIONAL_SKILLS_DIR/${__name}.md"
+      if [[ -f "$__file" ]]; then
+        OPTIONAL_SKILL_FILES+=("$__file")
+      else
+        echo "WARN: optional skill not found: ${__name}" >&2
+      fi
+    done
+  fi
+  set -u
 fi
 
 # skills_used.txt に記録
@@ -112,10 +118,12 @@ for f in "${GLOBAL_SKILL_FILES[@]}"; do
   rel="${f#"$SCRIPT_DIR/../"}"
   echo "$rel" >> "$SKILLS_USED_FILE"
 done
+set +u
 for f in "${OPTIONAL_SKILL_FILES[@]}"; do
   rel="${f#"$SCRIPT_DIR/../"}"
   echo "$rel" >> "$SKILLS_USED_FILE"
 done
+set -u
 
 # 最終プロンプトを組み立て
 {
@@ -132,6 +140,7 @@ done
     echo ""
   fi
 
+  set +u
   if [[ ${#OPTIONAL_SKILL_FILES[@]} -gt 0 ]]; then
     echo "# Agent Skills (optional)"
     for f in "${OPTIONAL_SKILL_FILES[@]}"; do
@@ -144,6 +153,7 @@ done
     done
     echo ""
   fi
+  set -u
 
   echo "# User Prompt"
   echo "----- USER PROMPT START -----"
