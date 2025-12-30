@@ -4,7 +4,8 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage: create-pr.sh --repo <repo_dir> --worktree <dir> [--branch <name>] [--base <branch>]
-                    [--title <title>] [--body-file <path>] [--commit-message <msg>] [--draft]
+                    [--title <title>] [--body-file <path>] [--report <path>] [--heading <name>]
+                    [--commit-message <msg>] [--draft]
 
 Options:
   --repo            Gitリポジトリのルートパス
@@ -13,6 +14,8 @@ Options:
   --base            ベースブランチ（省略時は origin/HEAD -> main の順で推定）
   --title           PRタイトル（省略時は最新コミットの件名）
   --body-file       PR本文ファイル（省略時は空）
+  --report          report.md から PR情報 を抽出する場合のパス
+  --heading         PR情報の見出し名（省略時は「PR情報」）
   --commit-message  変更が未コミットの場合に使うコミットメッセージ
   --draft           Draft PRとして作成
 USAGE
@@ -24,6 +27,8 @@ BRANCH=""
 BASE_BRANCH=""
 PR_TITLE=""
 PR_BODY_FILE=""
+REPORT_FILE=""
+HEADING="PR情報"
 COMMIT_MESSAGE=""
 DRAFT=0
 
@@ -51,6 +56,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --body-file)
       PR_BODY_FILE="$2"
+      shift 2
+      ;;
+    --report)
+      REPORT_FILE="$2"
+      shift 2
+      ;;
+    --heading)
+      HEADING="$2"
       shift 2
       ;;
     --commit-message)
@@ -102,6 +115,51 @@ if [[ -z "$BASE_BRANCH" ]]; then
   BASE_BRANCH="${base_ref#origin/}"
   if [[ -z "$BASE_BRANCH" ]]; then
     BASE_BRANCH="main"
+  fi
+fi
+
+TMP_BODY=""
+cleanup() {
+  if [[ -n "$TMP_BODY" && -f "$TMP_BODY" ]]; then
+    rm -f "$TMP_BODY"
+  fi
+}
+trap cleanup EXIT
+
+if [[ -n "$REPORT_FILE" && -f "$REPORT_FILE" && -z "$PR_BODY_FILE" ]]; then
+  section="$(
+    awk -v heading="$HEADING" '
+      $0 ~ "^##[[:space:]]+" heading "[[:space:]]*$" {in=1; next}
+      in && /^##[[:space:]]+/ {exit}
+      in {print}
+    ' "$REPORT_FILE"
+  )"
+
+  if [[ -n "$section" ]]; then
+    if [[ -z "$PR_TITLE" ]]; then
+      PR_TITLE="$(printf '%s\n' "$section" | sed -n 's/^タイトル:[[:space:]]*//p' | head -n 1)"
+    fi
+
+    body_text="$(
+      printf '%s\n' "$section" | awk '
+        found {print}
+        /^本文:[[:space:]]*/ {
+          sub(/^本文:[[:space:]]*/, "");
+          print;
+          found=1;
+        }
+      '
+    )"
+
+    if [[ -z "$body_text" ]]; then
+      body_text="$section"
+    fi
+
+    if [[ -n "$body_text" ]]; then
+      TMP_BODY="$(mktemp)"
+      printf '%s\n' "$body_text" > "$TMP_BODY"
+      PR_BODY_FILE="$TMP_BODY"
+    fi
   fi
 fi
 

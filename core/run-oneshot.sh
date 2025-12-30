@@ -204,6 +204,19 @@ if [[ -z "$USE_WORKTREE" ]]; then
   USE_WORKTREE="true"
 fi
 
+if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
+  already=0
+  for s in "${SKILLS[@]}"; do
+    if [[ "$s" == "pr-draft" ]]; then
+      already=1
+      break
+    fi
+  done
+  if [[ $already -eq 0 ]]; then
+    SKILLS+=("pr-draft")
+  fi
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
 ONESHOT="$ROOT_DIR/core/oneshot-exec.sh"
@@ -413,7 +426,7 @@ if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
     fi
     PR_ARGS+=(--body-file "$PR_BODY_FILE")
   elif [[ -n "$RUN_DIR" && -f "$RUN_DIR/report.md" ]]; then
-    PR_ARGS+=(--body-file "$RUN_DIR/report.md")
+    PR_ARGS+=(--report "$RUN_DIR/report.md")
   fi
   if [[ "$PR_DRAFT" == "true" || "$PR_DRAFT" == "1" ]]; then
     PR_ARGS+=(--draft)
