@@ -6,7 +6,8 @@
 - ルート:
   - `AGENTS.md`, `README.md`
   - `shells/`: 実行・集計用シェルスクリプト
-  - `samples/prompts/`: エージェントに渡すベースプロンプトのテンプレート
+  - `samples/prompts/zero-to-one/`: 0→1 用サンプルプロンプト
+  - `samples/prompts/existing-repo/`: 既存リポジトリ用サンプルプロンプト
   - `playground/`: サンプルプロンプトなどで生成された成果物を置く作業用ディレクトリ（`.gitignore` 対象）
 - `shells/`:
   - `oneshot-exec.sh`: 単一プロンプトを Codex CLI に投げる実行スクリプト
@@ -15,7 +16,9 @@
 
 ## 実行・開発コマンド
 - `bash shells/oneshot-exec.sh "<prompt or path>"`  
-  文字列またはプロンプトファイルパス（例: `samples/prompts/prompt-jp.md`）を渡して 1 回分のエージェント実行を行い、`worklogs/` に成果物を保存します。
+  文字列またはプロンプトファイルパス（例: `samples/prompts/zero-to-one/sample-game.md`）を渡して 1 回分のエージェント実行を行い、`playground/<run_id>/` 配下に生成物を作りつつ、`worklogs/` にログを保存します。
+- `bash shells/oneshot-exec.sh -C /path/to/project "<prompt or path>"`  
+  既存プロジェクトディレクトリをカレントディレクトリとして Codex を実行します（ログは引き続きハーネス側の `worklogs/` に保存）。
 - `bash shells/summarize_run.sh worklogs/<run_id>`  
   指定 run の要約レポート (`summary_report.md`) を生成・更新します。
 - Codex CLI 前提のため、`codex` コマンドが `PATH` にあることを確認してください。
@@ -27,7 +30,7 @@
 
 ## テスト・検証方針
 - 変更後は最低でも以下を手動実行して確認してください:
-  - `bash shells/oneshot-exec.sh samples/prompts/prompt-jp.md`
+  - `bash shells/oneshot-exec.sh samples/prompts/zero-to-one/sample-game.md`
   - 生成された `worklogs/<run_id>/summary_report.md` を開き、想定どおりの情報が出力されているか確認
 - 既存の引数インターフェース（位置引数 / 必須オプション）を壊さないよう注意してください。
 

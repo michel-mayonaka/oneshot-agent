@@ -1,4 +1,8 @@
 .DS_Store
-worklogs/
-playground/
+
+worklogs/*
+!worklogs/.gitkeep
+
+playground/*
+!playground/.gitkeep
 

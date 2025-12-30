@@ -1,6 +1,4 @@
-「Animal Tower Battle」に近い、画像アセットのみ（アニメーションなし）のブラウザ専用ゲームを作成してください。
-
-すべての成果物（HTML/CSS/JS/JSON/README など）は、このリポジトリ直下ではなく `playground/animal-tower/` ディレクトリを作成して、その中に生成してください。
+「Animal Tower Battle」に近い、画像アセットのみ（アニメーションなし）のブラウザ専用ゲームを、このカレントディレクトリ直下に作成してください。
 
 技術的制約:
 - HTML + Canvas + JavaScript を使用する。
