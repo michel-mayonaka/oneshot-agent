@@ -1,7 +1,7 @@
 # oneshot-agent
 
 Codex CLI に「ワンショットで仕事を投げる」ための、シンプルなハーネスです。  
-単一プロンプトを実行し、そのときのイベントログとサマリーレポートを `worklogs/` に保存します。
+単一プロンプトを実行し、そのときのイベントログとレポートを `worklogs/` に保存します。
 
 ## 前提条件
 - Codex CLI (`codex` コマンド) がインストール済みで `PATH` に通っていること
@@ -10,7 +10,7 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 ## 使い方
 ### 1. 0→1 用（デフォルト）
 任意のプロンプト文字列、またはプロンプトファイルを渡して実行します。  
-生成物は `worklogs/<run_id>/artifacts/` 配下に作られます。
+生成物は `worklogs/<spec>/<run_id>/artifacts/` 配下に作られます。
 
 ```bash
 bash core/oneshot-exec.sh "Create a small CLI tool in Go"
@@ -18,15 +18,12 @@ bash core/oneshot-exec.sh "Create a small CLI tool in Go"
 bash core/run-oneshot.sh --spec specs/doc-audit.yml
 ```
 
-各実行は一意な `run_id` を持ち、`worklogs/<run_id>/` に以下のファイルが保存されます:
-- `prompt.raw.txt`: ユーザーが指定した元のプロンプト
-- `prompt.txt`: skills を前置した最終プロンプト
-- `events.jsonl`: Codex CLI のイベントストリーム
-- `worklog.md`: reasoning/agent_message をまとめた作業ログ（Markdown）
-- `worklog.commands.md`: コマンド単位の実行ログ（Markdown）
-- `commands.jsonl`: コマンド実行ログ（JSONL）
-- `stderr_and_time.txt`: 実行時間とエラー出力
-- `skills_used.txt`: この run で読み込んだ skill ファイル一覧
+各実行は一意な `run_id` を持ち、`worklogs/<spec>/<run_id>/` に以下のように保存されます:
+- `report.md`: 人間向けの実行レポート
+- `prompts/`: `prompt.raw.txt`, `prompt.txt`, `skills_used.txt`
+- `logs/`: `events.jsonl`, `worklog.md`, `worklog.commands.md`, `commands.jsonl`, `stderr_and_time.txt`, `usage.json`
+- `inputs/`: `inputs.txt` など参照入力
+- `artifacts/`: 生成物
 
 ### 2. 既存リポジトリに対して実行する（-C）
 既存プロジェクトのディレクトリを `-C` で指定すると、そのディレクトリをカレントディレクトリとして Codex を実行できます。
@@ -41,10 +38,10 @@ bash core/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use to
 特定の run に対してサマリーレポートを生成します。
 
 ```bash
-bash core/summarize_run.sh worklogs/<run_id>
+bash core/summarize_run.sh worklogs/<spec>/<run_id>
 ```
 
-生成される `summary_report.md` には、使用トークン数・経過時間・Git 状態・プロンプト/出力の抜粋などが含まれます。
+生成される `report.md` には、使用トークン数・経過時間・Git 状態・プロンプト/出力の抜粋などが含まれます。
 
 ### 4. Spec + Makefile で実行する
 YAML の spec を `core/run-oneshot.sh` に渡して実行できます。`worklogs/<spec名>/<run_id>/` にログを格納します。
@@ -53,7 +50,7 @@ YAML の spec を `core/run-oneshot.sh` に渡して実行できます。`worklo
 make doc-audit
 make doc-fix
 # 任意のレポートを使う場合:
-# make doc-fix REPORT=worklogs/doc-audit/<run_id>/summary_report.md
+# make doc-fix REPORT=worklogs/doc-audit/<run_id>/report.md
 make test
 ```
 
@@ -127,7 +124,7 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
   - 実行時には、これらの Markdown をユーザープロンプトの前に連結した上で `prompt.txt` を生成し、`skills_used.txt` に使用スキルを記録する方針です。
 
 - **プロンプトサイズの計測とバリデーション**
-  - `prompt.txt` の文字数・概算トークン数を計測して `prompt_stats.txt` に保存し、`summary_report.md` にもサイズ情報を載せる構想です。
+  - `prompt.txt` の文字数・概算トークン数を計測して `prompt_stats.txt` に保存し、`report.md` にもサイズ情報を載せる構想です。
   - 閾値は環境変数（例: `ONESHOT_MAX_PROMPT_CHARS`, `ONESHOT_MAX_PROMPT_TOKENS`）で調整し、大きすぎる場合は警告、厳格モード（`ONESHOT_STRICT_PROMPT_LIMIT=1`）では実行中断も検討しています。
 
 実装を進める際は、まずこの README と `AGENTS.md` に記載した設計方針に沿って進めてください。

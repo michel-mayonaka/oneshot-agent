@@ -45,6 +45,7 @@ RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
 RUNS_DIR="${ONESHOT_RUNS_DIR:-$SCRIPT_DIR/../worklogs}"
 RUN_DIR="$RUNS_DIR/$RUN_ID"
 mkdir -p "$RUN_DIR"
+mkdir -p "$RUN_DIR/logs" "$RUN_DIR/prompts" "$RUN_DIR/inputs"
 
 # ターゲットディレクトリ決定（デフォルトは worklogs/<run_id>/artifacts/）
 if [[ -z "$TARGET_DIR" ]]; then
@@ -53,12 +54,12 @@ fi
 mkdir -p "$TARGET_DIR"
 
 # どこで動かしたかをメタデータとして残す
-printf '%s\n' "$TARGET_DIR" > "$RUN_DIR/target_dir.txt"
+printf '%s\n' "$TARGET_DIR" > "$RUN_DIR/logs/target_dir.txt"
 
 # プロンプト（生／最終）と skills 使用状況
-RAW_PROMPT_FILE="$RUN_DIR/prompt.raw.txt"
-FINAL_PROMPT_FILE="$RUN_DIR/prompt.txt"
-SKILLS_USED_FILE="$RUN_DIR/skills_used.txt"
+RAW_PROMPT_FILE="$RUN_DIR/prompts/prompt.raw.txt"
+FINAL_PROMPT_FILE="$RUN_DIR/prompts/prompt.txt"
+SKILLS_USED_FILE="$RUN_DIR/prompts/skills_used.txt"
 
 if [[ -f "$SKILLS_USED_FILE" ]]; then
   : > "$SKILLS_USED_FILE"
@@ -173,21 +174,21 @@ set -u
     --model gpt-5.2-codex \
     --json \
     - < "$FINAL_PROMPT_FILE" \
-  | tee "$RUN_DIR/events.jsonl" >/dev/null
+  | tee "$RUN_DIR/logs/events.jsonl" >/dev/null
   popd >/dev/null
-} 2> "$RUN_DIR/stderr_and_time.txt"
+} 2> "$RUN_DIR/logs/stderr_and_time.txt"
 
 # 作業ログ：reasoning や agent_message を時系列で Markdown 風に残す（Markdown形式）
 jq -r '
   select(.type=="item.completed" and (.item.type=="reasoning" or .item.type=="agent_message"))
   | "### " + .item.type + "\n" + (.item.text // "") + "\n"
-' "$RUN_DIR/events.jsonl" > "$RUN_DIR/worklog.md"
+' "$RUN_DIR/logs/events.jsonl" > "$RUN_DIR/logs/worklog.md"
 
 # コマンドログ：command_execution をコマンド単位で保存
 jq -c '
   select(.type=="item.completed" and .item.type=="command_execution")
   | {command:.item.command, status:.item.status, exit_code:.item.exit_code, output:.item.aggregated_output}
-' "$RUN_DIR/events.jsonl" > "$RUN_DIR/commands.jsonl"
+' "$RUN_DIR/logs/events.jsonl" > "$RUN_DIR/logs/commands.jsonl"
 
 jq -r '
   "## Command " + (input_line_number|tostring) + "\n"
@@ -195,16 +196,16 @@ jq -r '
   + "- status: " + (.status // "") + "\n"
   + "- exit_code: " + (.exit_code|tostring) + "\n"
   + (if (.output // "") != "" then "\n```text\n" + .output + "\n```\n" else "\n" end)
-' "$RUN_DIR/commands.jsonl" > "$RUN_DIR/worklog.commands.md"
+' "$RUN_DIR/logs/commands.jsonl" > "$RUN_DIR/logs/worklog.commands.md"
 
 # 最終メッセージ（サマリー）を別ファイルに保存（summary_report から参照）
 jq -rs '
   map(select(.type=="item.completed" and .item.type=="agent_message"))
   | if length > 0 then .[length-1].item.text else empty end
-' "$RUN_DIR/events.jsonl" > "$RUN_DIR/last_message.md"
+' "$RUN_DIR/logs/events.jsonl" > "$RUN_DIR/logs/last_message.md"
 
 # トークン usage（最後のturn.completedを採用）
-jq -c 'select(.type=="turn.completed") | .usage' "$RUN_DIR/events.jsonl" | tail -n 1 > "$RUN_DIR/usage.json"
+jq -c 'select(.type=="turn.completed") | .usage' "$RUN_DIR/logs/events.jsonl" | tail -n 1 > "$RUN_DIR/logs/usage.json"
 
 echo "run_dir=$RUN_DIR"
 echo "target_dir=$TARGET_DIR"

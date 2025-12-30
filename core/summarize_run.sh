@@ -2,13 +2,13 @@
 set -euo pipefail
 
 RUN_DIR="${1:?usage: summarize_run.sh <run_dir>}"
-EVENTS="$RUN_DIR/events.jsonl"
-TIMELOG="$RUN_DIR/stderr_and_time.txt"
-PROMPT="$RUN_DIR/prompt.txt"
-LASTMSG="$RUN_DIR/last_message.md"
-SKILLS_USED="$RUN_DIR/skills_used.txt"
+EVENTS="$RUN_DIR/logs/events.jsonl"
+TIMELOG="$RUN_DIR/logs/stderr_and_time.txt"
+PROMPT="$RUN_DIR/prompts/prompt.txt"
+LASTMSG="$RUN_DIR/logs/last_message.md"
+SKILLS_USED="$RUN_DIR/prompts/skills_used.txt"
 
-OUT="$RUN_DIR/summary_report.md"
+OUT="$RUN_DIR/report.md"
 
 # ---- helpers ----
 have() { command -v "$1" >/dev/null 2>&1; }
@@ -64,11 +64,11 @@ fi
 LASTMSG_HEAD=""
 if [[ -f "$LASTMSG" ]]; then
   LASTMSG_HEAD="$(sed -n '1,60p' "$LASTMSG")"
-elif [[ -f "$RUN_DIR/worklog.md" ]]; then
-  LASTMSG="$RUN_DIR/worklog.md"
+elif [[ -f "$RUN_DIR/logs/worklog.md" ]]; then
+  LASTMSG="$RUN_DIR/logs/worklog.md"
   LASTMSG_HEAD="$(sed -n '1,60p' "$LASTMSG")"
-elif [[ -f "$RUN_DIR/worklog.txt" ]]; then
-  LASTMSG="$RUN_DIR/worklog.txt"
+elif [[ -f "$RUN_DIR/logs/worklog.txt" ]]; then
+  LASTMSG="$RUN_DIR/logs/worklog.txt"
   LASTMSG_HEAD="$(sed -n '1,60p' "$LASTMSG")"
 fi
 
@@ -128,12 +128,12 @@ $( [[ -n "$LASTMSG_HEAD" ]] && printf '```markdown\n%s\n```\n' "$LASTMSG_HEAD" |
 $( [[ -n "$ERROR_SNIPPET" ]] && printf '```text\n%s\n```\n' "$ERROR_SNIPPET" || echo "- (none detected)" )
 
 ## Artifacts / 生成物
-- events: $( [[ -f "$EVENTS" ]] && echo "\`events.jsonl\`" || echo "N/A" )
-- worklog: $( [[ -f "$RUN_DIR/worklog.md" ]] && echo "\`worklog.md\`" || [[ -f "$RUN_DIR/worklog.txt" ]] && echo "\`worklog.txt\`" || echo "N/A" )
-- commands: $( [[ -f "$RUN_DIR/worklog.commands.md" ]] && echo "\`worklog.commands.md\`" || echo "N/A" )
-- commands_json: $( [[ -f "$RUN_DIR/commands.jsonl" ]] && echo "\`commands.jsonl\`" || echo "N/A" )
-- stderr/time: $( [[ -f "$TIMELOG" ]] && echo "\`stderr_and_time.txt\`" || echo "N/A" )
-- skills_used: $( [[ -f "$SKILLS_USED" ]] && echo "\`skills_used.txt\`" || echo "N/A" )
+- events: $( [[ -f "$EVENTS" ]] && echo "\`logs/events.jsonl\`" || echo "N/A" )
+- worklog: $( [[ -f "$RUN_DIR/logs/worklog.md" ]] && echo "\`logs/worklog.md\`" || [[ -f "$RUN_DIR/logs/worklog.txt" ]] && echo "\`logs/worklog.txt\`" || echo "N/A" )
+- commands: $( [[ -f "$RUN_DIR/logs/worklog.commands.md" ]] && echo "\`logs/worklog.commands.md\`" || echo "N/A" )
+- commands_json: $( [[ -f "$RUN_DIR/logs/commands.jsonl" ]] && echo "\`logs/commands.jsonl\`" || echo "N/A" )
+- stderr/time: $( [[ -f "$TIMELOG" ]] && echo "\`logs/stderr_and_time.txt\`" || echo "N/A" )
+- skills_used: $( [[ -f "$SKILLS_USED" ]] && echo "\`prompts/skills_used.txt\`" || echo "N/A" )
 EOF
 
 echo "generated: $OUT"

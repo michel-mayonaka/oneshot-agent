@@ -16,11 +16,11 @@
 
 ## 実行・開発コマンド
 - `bash core/oneshot-exec.sh "<prompt or path>"`  
-  文字列または spec ファイルパスを渡して 1 回分のエージェント実行を行い、`worklogs/<run_id>/artifacts/` に生成物を作りつつ、`worklogs/` にログを保存します。
+  文字列または spec ファイルパスを渡して 1 回分のエージェント実行を行い、`worklogs/<spec>/<run_id>/artifacts/` に生成物を作りつつ、`worklogs/` にログを保存します。
 - `bash core/oneshot-exec.sh -C /path/to/project "<prompt or path>"`  
   既存プロジェクトディレクトリをカレントディレクトリとして Codex を実行します（ログは引き続きハーネス側の `worklogs/` に保存）。
-- `bash core/summarize_run.sh worklogs/<run_id>`  
-  指定 run の要約レポート (`summary_report.md`) を生成・更新します。
+- `bash core/summarize_run.sh worklogs/<spec>/<run_id>`  
+  指定 run の要約レポート (`report.md`) を生成・更新します。
 - Codex CLI 前提のため、`codex` コマンドが `PATH` にあることを確認してください。
 
 ## コーディングスタイル & 命名
@@ -31,7 +31,7 @@
 ## テスト・検証方針
 - 変更後は最低でも以下を手動実行して確認してください:
   - `bash core/run-oneshot.sh --spec specs/doc-audit.yml`
-  - 生成された `worklogs/<run_id>/summary_report.md` を開き、想定どおりの情報が出力されているか確認
+  - 生成された `worklogs/<spec>/<run_id>/report.md` を開き、想定どおりの情報が出力されているか確認
 - 既存の引数インターフェース（位置引数 / 必須オプション）を壊さないよう注意してください。
 
 ## コミット・PR ガイドライン
@@ -50,7 +50,7 @@
   - `skills/optional/`: タスクごとに `-s` オプションや `ONESHOT_SKILLS` で明示的に指定して読み込むスキル群。
 - 実行時のバンドル:
   - `oneshot-exec.sh` は `prompt.raw.txt`（元のプロンプト）と `prompt.txt`（skills を前置した最終プロンプト）を分けて保存します。
-  - 使用されたスキルのファイル一覧を `skills_used.txt` に残し、`summary_report.md` のメタデータにも `skills:` として表示します。
+  - 使用されたスキルのファイル一覧を `skills_used.txt` に残し、`report.md` のメタデータにも `skills:` として表示します。
   - グローバルスキルを無効化したい場合は `ONESHOT_DISABLE_GLOBAL_SKILLS=1` を設定してください。
 
 ## プロンプトサイズ & バリデーション方針（構想段階）
@@ -60,5 +60,5 @@
   - 閾値を越えたら stderr に警告を出す（例: `WARN: prompt is very large; consider trimming skills.`）。
 - 環境変数による制御案:
   - `ONESHOT_MAX_PROMPT_CHARS` / `ONESHOT_MAX_PROMPT_TOKENS`: ソフトリミット（警告用）。
-  - `ONESHOT_STRICT_PROMPT_LIMIT=1`: 有効な場合は、リミット超過時に実行を中断し、`summary_report.md` に中断理由を書き出す。
+  - `ONESHOT_STRICT_PROMPT_LIMIT=1`: 有効な場合は、リミット超過時に実行を中断し、`report.md` に中断理由を書き出す。
 - 実装を進める場合は、まず「計測とログ出し」から入り、その後で中断ロジックや skills 側の要約戦略に広げてください。

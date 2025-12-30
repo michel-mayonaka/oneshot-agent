@@ -271,6 +271,6 @@ if [[ -n "$RUN_DIR" ]]; then
   for i in "${!INPUT_KEYS[@]}"; do
     k="${INPUT_KEYS[$i]}"
     v="${INPUT_VALS[$i]}"
-    printf '%s=%s\n' "$k" "$v" >> "$RUN_DIR/inputs.txt"
+    printf '%s=%s\n' "$k" "$v" >> "$RUN_DIR/inputs/inputs.txt"
   done
 fi
