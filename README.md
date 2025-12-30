@@ -13,9 +13,9 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 生成物はこのリポジトリ直下ではなく、`playground/<run_id>/` 配下に作られます。
 
 ```bash
-bash shells/oneshot-exec.sh "Create a small CLI tool in Go"
+bash core/oneshot-exec.sh "Create a small CLI tool in Go"
 # またはサンプルプロンプトを使う場合
-bash shells/oneshot-exec.sh samples/prompts/zero-to-one/sample-game.md
+bash core/oneshot-exec.sh samples/prompts/zero-to-one/sample-game.md
 ```
 
 各実行は一意な `run_id` を持ち、`worklogs/<run_id>/` に以下のファイルが保存されます:
@@ -23,6 +23,8 @@ bash shells/oneshot-exec.sh samples/prompts/zero-to-one/sample-game.md
 - `prompt.txt`: skills を前置した最終プロンプト
 - `events.jsonl`: Codex CLI のイベントストリーム
 - `worklog.md`: reasoning/agent_message をまとめた作業ログ（Markdown）
+- `worklog.commands.md`: コマンド単位の実行ログ（Markdown）
+- `commands.jsonl`: コマンド実行ログ（JSONL）
 - `stderr_and_time.txt`: 実行時間とエラー出力
 - `skills_used.txt`: この run で読み込んだ skill ファイル一覧
 
@@ -30,7 +32,7 @@ bash shells/oneshot-exec.sh samples/prompts/zero-to-one/sample-game.md
 既存プロジェクトのディレクトリを `-C` で指定すると、そのディレクトリをカレントディレクトリとして Codex を実行できます。
 
 ```bash
-bash shells/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use tool X"
+bash core/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use tool X"
 ```
 
 `worklogs/` は常にこのハーネス側に生成されるため、ターゲットリポジトリはログで汚れません。
@@ -39,10 +41,23 @@ bash shells/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use 
 特定の run に対してサマリーレポートを生成します。
 
 ```bash
-bash shells/summarize_run.sh worklogs/<run_id>
+bash core/summarize_run.sh worklogs/<run_id>
 ```
 
 生成される `summary_report.md` には、使用トークン数・経過時間・Git 状態・プロンプト/出力の抜粋などが含まれます。
+
+### 4. ドキュメント監査（調査→修正の二段）
+まず調査のみを実行し、結果レポートを次の修正ステップに渡します。
+
+```bash
+# Step1: 調査（不整合の洗い出しのみ）
+bash commands/doc-audit.sh -C /path/to/your-project
+
+# Step2: 修正（Step1のレポートを入力）
+bash commands/doc-fix.sh --report worklogs/<run_id>/summary_report.md -C /path/to/your-project
+```
+
+`ONESHOT_PROJECT_ROOT`（または `PROJECT_ROOT`）が設定されている場合、`-C` 省略時のデフォルトとして使用されます。
 
 ## 他リポジトリへの組み込み例
 おすすめは「oneshot-agent はこのリポジトリで集中管理し、各プロジェクトにはラッパースクリプトだけ置く」運用です。
@@ -61,7 +76,7 @@ set -euo pipefail
 
 : "${ONESHOT_AGENT_ROOT:?ONESHOT_AGENT_ROOT is not set}"
 
-"$ONESHOT_AGENT_ROOT/shells/oneshot-exec.sh" -C "$(pwd)" "$@"
+"$ONESHOT_AGENT_ROOT/core/oneshot-exec.sh" -C "$(pwd)" "$@"
 ```
 
 3. プロジェクト側での使い方:
@@ -75,8 +90,9 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 ```
 
 ## ディレクトリ構成
-- ルート: `AGENTS.md`, `README.md`, `shells/`, `samples/`, `skills/`, `playground/`
-- `shells/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`）
+- ルート: `AGENTS.md`, `README.md`, `core/`, `commands/`, `samples/`, `skills/`, `playground/`
+- `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`）
+- `commands/`: ユーザー向けの実行コマンド群
 - `samples/prompts/zero-to-one/`: 0→1 用サンプルプロンプト（`sample-game.md` など）
 - `samples/prompts/existing-repo/`: 既存リポジトリ用サンプルプロンプト（`sample-refactor.md` など）
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）

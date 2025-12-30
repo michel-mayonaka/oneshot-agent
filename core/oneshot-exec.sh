@@ -38,7 +38,7 @@ if [[ -z "$PROMPT" ]]; then
   exit 1
 fi
 
-# スクリプト自身のディレクトリ（shells/）を解決
+# スクリプト自身のディレクトリ（core/）を解決
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
@@ -181,6 +181,20 @@ jq -r '
   select(.type=="item.completed" and (.item.type=="reasoning" or .item.type=="agent_message"))
   | "### " + .item.type + "\n" + (.item.text // "") + "\n"
 ' "$RUN_DIR/events.jsonl" > "$RUN_DIR/worklog.md"
+
+# コマンドログ：command_execution をコマンド単位で保存
+jq -c '
+  select(.type=="item.completed" and .item.type=="command_execution")
+  | {command:.item.command, status:.item.status, exit_code:.item.exit_code, output:.item.aggregated_output}
+' "$RUN_DIR/events.jsonl" > "$RUN_DIR/commands.jsonl"
+
+jq -r '
+  "## Command " + (input_line_number|tostring) + "\n"
+  + "- command: `" + .command + "`\n"
+  + "- status: " + (.status // "") + "\n"
+  + "- exit_code: " + (.exit_code|tostring) + "\n"
+  + (if (.output // "") != "" then "\n```text\n" + .output + "\n```\n" else "\n" end)
+' "$RUN_DIR/commands.jsonl" > "$RUN_DIR/worklog.commands.md"
 
 # 最終メッセージ（サマリー）を別ファイルに保存（summary_report から参照）
 jq -rs '

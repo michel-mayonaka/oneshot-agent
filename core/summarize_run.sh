@@ -130,6 +130,8 @@ $( [[ -n "$ERROR_SNIPPET" ]] && printf '```text\n%s\n```\n' "$ERROR_SNIPPET" || 
 ## Artifacts / 生成物
 - events: $( [[ -f "$EVENTS" ]] && echo "\`events.jsonl\`" || echo "N/A" )
 - worklog: $( [[ -f "$RUN_DIR/worklog.md" ]] && echo "\`worklog.md\`" || [[ -f "$RUN_DIR/worklog.txt" ]] && echo "\`worklog.txt\`" || echo "N/A" )
+- commands: $( [[ -f "$RUN_DIR/worklog.commands.md" ]] && echo "\`worklog.commands.md\`" || echo "N/A" )
+- commands_json: $( [[ -f "$RUN_DIR/commands.jsonl" ]] && echo "\`commands.jsonl\`" || echo "N/A" )
 - stderr/time: $( [[ -f "$TIMELOG" ]] && echo "\`stderr_and_time.txt\`" || echo "N/A" )
 - skills_used: $( [[ -f "$SKILLS_USED" ]] && echo "\`skills_used.txt\`" || echo "N/A" )
 EOF
