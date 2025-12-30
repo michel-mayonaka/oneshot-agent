@@ -55,6 +55,7 @@ make test
 ```
 
 spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として spec 内に書きます。
+※ Makefile のエラーメッセージ例では `summary_report.md` と表示されますが、実際に渡すのは `report.md` です（要確認: Makefile 側の表示修正が必要）。
 
 ### Spec 仕様（概要）
 最小構成:
@@ -106,7 +107,7 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 
 ## ディレクトリ構成
 - ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `skills/`
-- `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`, `run-oneshot.sh`）
+- `core/`: 実行スクリプト（`oneshot-exec.sh`, `run-oneshot.sh`, `summarize_run.sh`, `create-pr.sh`, `create-worktree.sh`, `remove-worktree.sh`, `translate-worklog-to-ja.sh`）
 - `specs/`: run-oneshot 用の YAML 定義
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
 - `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル

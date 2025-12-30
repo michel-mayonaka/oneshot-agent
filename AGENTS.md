@@ -11,7 +11,12 @@
   - `skills/optional/`: 実行時に明示指定して読み込むスキル群
 - `core/`:
   - `oneshot-exec.sh`: 単一プロンプトを Codex CLI に投げる実行スクリプト
+  - `run-oneshot.sh`: spec を読み込んで 1 回分の実行を行うラッパー
   - `summarize_run.sh`: 実行結果 (`events.jsonl` など) からサマリーレポートを生成
+  - `create-pr.sh`: レポートから PR 情報を生成
+  - `create-worktree.sh`: 作業用 worktree の作成
+  - `remove-worktree.sh`: 作業用 worktree の削除
+  - `translate-worklog-to-ja.sh`: worklog の日本語化
 - `worklogs/`: 各 run ごとのログ・プロンプト・レポートを保存（基本は自動生成。手動編集しない）
 
 ## 実行・開発コマンド
