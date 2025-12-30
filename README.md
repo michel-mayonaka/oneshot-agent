@@ -15,7 +15,7 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 ```bash
 bash core/oneshot-exec.sh "Create a small CLI tool in Go"
 # またはサンプルプロンプトを使う場合
-bash core/oneshot-exec.sh samples/prompts/zero-to-one/sample-game.md
+bash core/run-oneshot.sh --spec specs/doc-audit.yml
 ```
 
 各実行は一意な `run_id` を持ち、`worklogs/<run_id>/` に以下のファイルが保存されます:
@@ -88,11 +88,9 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 ```
 
 ## ディレクトリ構成
-- ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `samples/`, `skills/`
+- ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `skills/`
 - `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`, `run-oneshot.sh`）
 - `specs/`: run-oneshot 用の YAML 定義
-- `samples/prompts/zero-to-one/`: 0→1 用サンプルプロンプト（`sample-game.md` など）
-- `samples/prompts/existing-repo/`: 既存リポジトリ用サンプルプロンプト（`sample-refactor.md` など）
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
 - `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル
 - `worklogs/`: 各 run のログ・レポート・成果物（自動生成。通常は手動編集しない）
