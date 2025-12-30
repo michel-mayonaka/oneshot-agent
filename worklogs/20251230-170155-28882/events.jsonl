@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"019b6e47-289d-7911-8c99-f1fe71e1009d"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"reasoning","text":"**Implementing weather tool with Japanese support**"}}
+{"type":"item.completed","item":{"id":"item_1","type":"web_search","query":"weather: United States"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"今日（2025年12月30日）の米国の天気は、現在は晴れで14°F（-10°C）です。日中は概ね晴れて、午後は48°F（9°C）まで上がる予報です。\n\n都市を指定していただければ、より正確な「今日の天気」をお伝えします。"}}
+{"type":"turn.completed","usage":{"input_tokens":8799,"cached_input_tokens":7680,"output_tokens":137}}
