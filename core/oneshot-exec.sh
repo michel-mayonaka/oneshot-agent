@@ -6,7 +6,7 @@ usage() {
 Usage: $(basename "$0") [-C <target_dir>] [-s skill1,skill2] <prompt.txt or prompt string>
 
   -C DIR   Codex を実行するターゲットディレクトリ（既存リポジトリなど）。
-           省略時は、このリポジトリ直下に playground/<run_id>/ を作成して使用します。
+           省略時は、worklogs/<run_id>/artifacts/ を作成して使用します。
   -s NAME  追加で読み込む optional skill 名（カンマ区切り可）。skills/optional/<NAME>.md を参照します。
 
 環境変数:
@@ -42,12 +42,13 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
-RUN_DIR="$SCRIPT_DIR/../worklogs/$RUN_ID"
+RUNS_DIR="${ONESHOT_RUNS_DIR:-$SCRIPT_DIR/../worklogs}"
+RUN_DIR="$RUNS_DIR/$RUN_ID"
 mkdir -p "$RUN_DIR"
 
-# ターゲットディレクトリ決定（デフォルトは playground/<run_id>/）
+# ターゲットディレクトリ決定（デフォルトは worklogs/<run_id>/artifacts/）
 if [[ -z "$TARGET_DIR" ]]; then
-  TARGET_DIR="$SCRIPT_DIR/../playground/$RUN_ID"
+  TARGET_DIR="$RUN_DIR/artifacts"
 fi
 mkdir -p "$TARGET_DIR"
 

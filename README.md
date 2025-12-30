@@ -8,9 +8,9 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 - `bash`, `jq`, `git` が利用可能であること（`jq` はサマリ生成で使用、無い場合は一部情報が省略されます）
 
 ## 使い方
-### 1. 0→1 用（playground モード・デフォルト）
+### 1. 0→1 用（デフォルト）
 任意のプロンプト文字列、またはプロンプトファイルを渡して実行します。  
-生成物はこのリポジトリ直下ではなく、`playground/<run_id>/` 配下に作られます。
+生成物は `worklogs/<run_id>/artifacts/` 配下に作られます。
 
 ```bash
 bash core/oneshot-exec.sh "Create a small CLI tool in Go"
@@ -46,18 +46,16 @@ bash core/summarize_run.sh worklogs/<run_id>
 
 生成される `summary_report.md` には、使用トークン数・経過時間・Git 状態・プロンプト/出力の抜粋などが含まれます。
 
-### 4. ドキュメント監査（調査→修正の二段）
-まず調査のみを実行し、結果レポートを次の修正ステップに渡します。
+### 4. Spec + Makefile で実行する
+YAML の spec を `core/run-oneshot.sh` に渡して実行できます。`worklogs/<spec名>/<run_id>/` にログを格納します。
 
 ```bash
-# Step1: 調査（不整合の洗い出しのみ）
-bash commands/doc-audit.sh -C /path/to/your-project
-
-# Step2: 修正（Step1のレポートを入力）
-bash commands/doc-fix.sh --report worklogs/<run_id>/summary_report.md -C /path/to/your-project
+make doc-audit
+make doc-fix REPORT=worklogs/doc-audit/<run_id>/summary_report.md
+make test
 ```
 
-`ONESHOT_PROJECT_ROOT`（または `PROJECT_ROOT`）が設定されている場合、`-C` 省略時のデフォルトとして使用されます。
+spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として spec 内に書きます。
 
 ## 他リポジトリへの組み込み例
 おすすめは「oneshot-agent はこのリポジトリで集中管理し、各プロジェクトにはラッパースクリプトだけ置く」運用です。
@@ -90,15 +88,14 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 ```
 
 ## ディレクトリ構成
-- ルート: `AGENTS.md`, `README.md`, `core/`, `commands/`, `samples/`, `skills/`, `playground/`
-- `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`）
-- `commands/`: ユーザー向けの実行コマンド群
+- ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `samples/`, `skills/`
+- `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`, `run-oneshot.sh`）
+- `specs/`: run-oneshot 用の YAML 定義
 - `samples/prompts/zero-to-one/`: 0→1 用サンプルプロンプト（`sample-game.md` など）
 - `samples/prompts/existing-repo/`: 既存リポジトリ用サンプルプロンプト（`sample-refactor.md` など）
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
 - `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル
-- `worklogs/`: 各 run のログ・レポート（自動生成。通常は手動編集しない）
-- `playground/`: サンプルプロンプトなどで生成された成果物を置く作業用ディレクトリ（`.gitignore` 対象）
+- `worklogs/`: 各 run のログ・レポート・成果物（自動生成。通常は手動編集しない）
 
 より詳細な貢献ルールや運用方針は `AGENTS.md` を参照してください。
 

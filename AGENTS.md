@@ -6,12 +6,11 @@
 - ルート:
   - `AGENTS.md`, `README.md`
   - `core/`: 実行・集計用シェルスクリプト
-  - `commands/`: ユーザーが直接叩くコマンド群
+  - `specs/`: run-oneshot 用の YAML 定義
   - `samples/prompts/zero-to-one/`: 0→1 用サンプルプロンプト
   - `samples/prompts/existing-repo/`: 既存リポジトリ用サンプルプロンプト
   - `skills/global/`: すべての run に自動で含めたい共通ガイド
   - `skills/optional/`: 実行時に明示指定して読み込むスキル群
-  - `playground/`: サンプルプロンプトなどで生成された成果物を置く作業用ディレクトリ（`.gitignore` 対象）
 - `core/`:
   - `oneshot-exec.sh`: 単一プロンプトを Codex CLI に投げる実行スクリプト
   - `summarize_run.sh`: 実行結果 (`events.jsonl` など) からサマリーレポートを生成
@@ -19,7 +18,7 @@
 
 ## 実行・開発コマンド
 - `bash core/oneshot-exec.sh "<prompt or path>"`  
-  文字列またはプロンプトファイルパス（例: `samples/prompts/zero-to-one/sample-game.md`）を渡して 1 回分のエージェント実行を行い、`playground/<run_id>/` 配下に生成物を作りつつ、`worklogs/` にログを保存します。
+  文字列またはプロンプトファイルパス（例: `samples/prompts/zero-to-one/sample-game.md`）を渡して 1 回分のエージェント実行を行い、`worklogs/<run_id>/artifacts/` に生成物を作りつつ、`worklogs/` にログを保存します。
 - `bash core/oneshot-exec.sh -C /path/to/project "<prompt or path>"`  
   既存プロジェクトディレクトリをカレントディレクトリとして Codex を実行します（ログは引き続きハーネス側の `worklogs/` に保存）。
 - `bash core/summarize_run.sh worklogs/<run_id>`  
