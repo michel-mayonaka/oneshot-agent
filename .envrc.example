@@ -1,0 +1,13 @@
+# Example .envrc for projects using oneshot-agent
+#
+# Usage:
+# 1. Copy this file to your project as `.envrc`.
+# 2. Adjust ONESHOT_AGENT_ROOT to point to your local clone of oneshot-agent.
+# 3. Run `direnv allow` in that project.
+
+# oneshot-agent のインストールパス（このリポジトリ）
+export ONESHOT_AGENT_ROOT="$HOME/dev/oneshot-agent"
+
+# 作業ログ翻訳に使うモデル（省略時は gpt-5.2）
+export ONESHOT_TRANSLATE_MODEL="gpt-5.2"
+

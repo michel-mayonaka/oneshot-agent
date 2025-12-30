@@ -6,3 +6,4 @@ worklogs/*
 playground/*
 !playground/.gitkeep
 
+.envrc
