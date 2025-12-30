@@ -142,8 +142,16 @@ lines = text.splitlines()
 
 blocks = []
 current = None
+def is_heading(line):
+    line = line.strip()
+    if line == f"## {heading}":
+        return True
+    if line in (f"**{heading}**", f"**{heading}** "):
+        return True
+    return False
+
 for line in lines:
-    if line.strip() == f"## {heading}":
+    if is_heading(line):
         if current is not None:
             blocks.append(current)
         current = []
