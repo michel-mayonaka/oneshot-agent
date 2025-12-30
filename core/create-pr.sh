@@ -182,6 +182,13 @@ def parse_block(block):
     if not body_lines:
         body_lines = block
     body = "\n".join(body_lines).strip()
+    if body:
+        body_split = body.splitlines()
+        if len(body_split) >= 2:
+            first = body_split[0].strip()
+            last = body_split[-1].strip()
+            if first.startswith("```") and last.startswith("```"):
+                body = "\n".join(body_split[1:-1]).strip()
     return title, body
 
 def is_placeholder(title, body):
