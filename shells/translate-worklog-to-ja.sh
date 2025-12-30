@@ -15,6 +15,8 @@ if ! command -v codex >/dev/null 2>&1; then
   exit 1
 fi
 
+MODEL="${ONESHOT_TRANSLATE_MODEL:-gpt-5.2}"
+
 {
   cat <<'EOF'
 You are a bilingual developer assistant.
@@ -34,7 +36,6 @@ EOF
   cat <<'EOF'
 ----- WORK LOG END -----
 EOF
-} | codex exec --skip-git-repo-check --model gpt-5.2-codex > "$OUT_JA"
+} | codex exec --skip-git-repo-check --model "$MODEL" > "$OUT_JA"
 
 echo "generated: $OUT_JA"
-
