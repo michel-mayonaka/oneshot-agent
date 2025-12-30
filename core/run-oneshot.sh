@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: run-oneshot.sh --spec <spec.yml> [--audit-report <file>] [--render-only]
+Usage: run-oneshot.sh --spec <spec.yml> [--audit-report <file>] [--input <key=path>] [--render-only]
 
 YAML spec (flat):
   name: doc-audit
@@ -17,13 +17,15 @@ YAML spec (flat):
 Notes:
 - prompt_file と prompt_text はどちらか一方を指定。
 - target_dir 未指定時は ONESHOT_PROJECT_ROOT -> PROJECT_ROOT -> PWD の順で使用。
-- __AUDIT_REPORT__ は必要に応じて置換される。
+- inputs で指定した値は __INPUT_<KEY>__ に置換される（KEYは大文字化）。
+- __AUDIT_REPORT__ は互換のために残すが、inputs の利用を推奨。
 USAGE
 }
 
 SPEC=""
 AUDIT_REPORT_SRC=""
 RENDER_ONLY=0
+INPUT_OVERRIDES=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --spec)
@@ -32,6 +34,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --audit-report)
       AUDIT_REPORT_SRC="$2"
+      shift 2
+      ;;
+    --input)
+      INPUT_OVERRIDES+=("$2")
       shift 2
       ;;
     --render-only)
@@ -69,13 +75,30 @@ trim() {
   printf '%s' "$s"
 }
 
+set_input() {
+  local k="$1"
+  local v="$2"
+  local i
+  for i in "${!INPUT_KEYS[@]}"; do
+    if [[ "${INPUT_KEYS[$i]}" == "$k" ]]; then
+      INPUT_VALS[$i]="$v"
+      return
+    fi
+  done
+  INPUT_KEYS+=("$k")
+  INPUT_VALS+=("$v")
+}
+
 NAME=""
 PROMPT_FILE=""
 PROMPT_TEXT=""
 TARGET_DIR=""
 DISABLE_GLOBAL=""
 SKILLS=()
+INPUT_KEYS=()
+INPUT_VALS=()
 IN_SKILLS_BLOCK=0
+IN_INPUTS_BLOCK=0
 
 while IFS= read -r line || [[ -n "$line" ]]; do
   # strip comments
@@ -85,6 +108,10 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
   if [[ "$line" == skills:* ]]; then
     IN_SKILLS_BLOCK=1
+    continue
+  fi
+  if [[ "$line" == inputs:* ]]; then
+    IN_INPUTS_BLOCK=1
     continue
   fi
 
@@ -97,6 +124,27 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       IN_SKILLS_BLOCK=0
     fi
   fi
+  if [[ $IN_INPUTS_BLOCK -eq 1 ]]; then
+    if [[ "$line" =~ ^[a-zA-Z0-9_]+: ]]; then
+      key="${line%%:*}"
+      val="$(trim "${line#*:}")"
+      case "$key" in
+        name|prompt_file|prompt_text|skills|target_dir|disable_global_skills|inputs)
+          IN_INPUTS_BLOCK=0
+          ;;
+        *)
+          val="${val%\"}"
+          val="${val#\"}"
+          val="${val%\'}"
+          val="${val#\'}"
+          set_input "$key" "$val"
+          continue
+          ;;
+      esac
+    else
+      IN_INPUTS_BLOCK=0
+    fi
+  fi
 
   if [[ "$line" =~ ^[a-zA-Z0-9_]+: ]]; then
     key="${line%%:*}"
@@ -107,6 +155,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       prompt_text) PROMPT_TEXT="$val" ;;
       target_dir) TARGET_DIR="$val" ;;
       disable_global_skills) DISABLE_GLOBAL="$val" ;;
+      inputs) IN_INPUTS_BLOCK=1 ;;
       *) : ;;
     esac
   fi
@@ -167,23 +216,71 @@ if [[ -f "$PROMPT_PATH" ]]; then
   PROMPT_TMP="$TMP_DIR/prompt.rendered.txt"
   cp "$PROMPT_PATH" "$PROMPT_TMP"
   if [[ -n "$AUDIT_REPORT_SRC" ]]; then
-    if [[ -f "$AUDIT_REPORT_SRC" ]]; then
-      python3 - "$PROMPT_TMP" "$AUDIT_REPORT_SRC" <<'PY'
+    set_input "audit_report" "$AUDIT_REPORT_SRC"
+  fi
+  if [[ ${#INPUT_OVERRIDES[@]} -gt 0 ]]; then
+    for override in "${INPUT_OVERRIDES[@]}"; do
+      k="${override%%=*}"
+      v="${override#*=}"
+      if [[ -z "$k" || "$k" == "$override" ]]; then
+        echo "Invalid --input (expected key=path): $override" >&2
+        exit 1
+      fi
+      set_input "$k" "$v"
+    done
+  fi
+  for i in "${!INPUT_KEYS[@]}"; do
+    k="${INPUT_KEYS[$i]}"
+    v="${INPUT_VALS[$i]}"
+    resolved_path=""
+    if [[ "$v" == from_run:* ]]; then
+      ref="${v#from_run:}"
+      spec="${ref%%:*}"
+      rest="${ref#*:}"
+      run_id="${rest%%:*}"
+      rel_path="${rest#*:}"
+      if [[ -z "$spec" || -z "$run_id" || -z "$rel_path" ]]; then
+        echo "Invalid from_run format: $v" >&2
+        exit 1
+      fi
+      if [[ "$run_id" == "latest" ]]; then
+        if [[ -d "$ROOT_DIR/worklogs/$spec" ]]; then
+          run_id="$(ls -1 "$ROOT_DIR/worklogs/$spec" | sort | tail -n 1)"
+        else
+          run_id=""
+        fi
+      fi
+      resolved_path="$ROOT_DIR/worklogs/$spec/$run_id/$rel_path"
+      if [[ -z "$run_id" || ! -f "$resolved_path" ]]; then
+        echo "Referenced run artifact not found: $v" >&2
+        exit 1
+      fi
+    else
+      if [[ -f "$v" ]]; then
+        resolved_path="$v"
+      elif [[ -f "$ROOT_DIR/$v" ]]; then
+        resolved_path="$ROOT_DIR/$v"
+      fi
+    fi
+    if [[ -z "$resolved_path" ]]; then
+      resolved_path="$TMP_DIR/input.$k.txt"
+      printf '%s' "$v" > "$resolved_path"
+    fi
+    key_upper="$(printf '%s' "$k" | tr '[:lower:]' '[:upper:]')"
+    placeholder="__INPUT_${key_upper}__"
+    python3 - "$PROMPT_TMP" "$resolved_path" "$placeholder" <<'PY'
 import sys
 from pathlib import Path
 
 prompt_path = Path(sys.argv[1])
-report_path = Path(sys.argv[2])
+content_path = Path(sys.argv[2])
+placeholder = sys.argv[3]
 
 text = prompt_path.read_text()
-report = report_path.read_text()
-prompt_path.write_text(text.replace("__AUDIT_REPORT__", report))
+content = content_path.read_text()
+prompt_path.write_text(text.replace(placeholder, content))
 PY
-    else
-      echo "audit report not found: $AUDIT_REPORT_SRC" >&2
-      exit 1
-    fi
-  fi
+  done
   PROMPT_PATH="$PROMPT_TMP"
 fi
 
@@ -218,7 +315,9 @@ echo "$OUTPUT"
 
 RUN_DIR="$(printf '%s\n' "$OUTPUT" | awk -F= '/^run_dir=/{print $2}' | tail -n 1)"
 if [[ -n "$RUN_DIR" ]]; then
-  if [[ -n "$AUDIT_REPORT_SRC" && -f "$AUDIT_REPORT_SRC" ]]; then
-    cp "$AUDIT_REPORT_SRC" "$RUN_DIR/audit_report.txt"
-  fi
+  for i in "${!INPUT_KEYS[@]}"; do
+    k="${INPUT_KEYS[$i]}"
+    v="${INPUT_VALS[$i]}"
+    printf '%s=%s\n' "$k" "$v" >> "$RUN_DIR/inputs.txt"
+  done
 fi

@@ -11,8 +11,9 @@ doc-audit:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --spec $(DOC_AUDIT_SPEC)
 
 doc-fix:
-	@if [[ -z "$(REPORT)" ]]; then echo "REPORT is required (e.g. make doc-fix REPORT=worklogs/doc-audit/<run_id>/summary_report.md)"; exit 1; fi
-	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --spec $(DOC_FIX_SPEC) --audit-report $(REPORT)
+	@EXTRA=""; \
+	if [[ -n "$(REPORT)" ]]; then EXTRA="--input audit_report=$(REPORT)"; fi; \
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --spec $(DOC_FIX_SPEC) $$EXTRA
 
 test:
 	@TMP_DIR=$$(mktemp -d); \
