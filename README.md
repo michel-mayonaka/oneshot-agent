@@ -106,7 +106,7 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 
 ## ディレクトリ構成
 - ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `skills/`
-- `core/`: 実行スクリプト（`oneshot-exec.sh`, `summarize_run.sh`, `run-oneshot.sh`）
+- `core/`: 実行スクリプト（`oneshot-exec.sh`, `run-oneshot.sh`, `summarize_run.sh`, `create-pr.sh`, `create-worktree.sh`, `remove-worktree.sh`, `translate-worklog-to-ja.sh`）
 - `specs/`: run-oneshot 用の YAML 定義
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
 - `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル
