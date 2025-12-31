@@ -6,7 +6,7 @@
 3. 必要なら `ONESHOT_PROJECT_ROOT` を設定します。
 4. `core/run-oneshot.sh --spec ...` を実行します。
 5. 出力された `run_dir` を控えます。
-6. `worklogs/` の `report.md` を確認します。
+6. `run_dir` 直下の `report.md` を確認します。
 
 ## 例外フロー: AIが間違う
 - 症状: 出力が期待と異なります。

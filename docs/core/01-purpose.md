@@ -22,7 +22,7 @@
 
 # 用語集
 - run_id: 1回の実行を識別するID。
-- run_dir: `worklogs/<spec>/<run_id>` 配下。
+- run_dir: oneshot-exec は `worklogs/<run_id>`、run-oneshot は `worklogs/<spec>/<run_id>` 配下。
 - spec: `specs/*.yml` の実行定義。
 - worktree: Git の作業コピー。
 - prompt.raw.txt: ユーザ入力の原文。

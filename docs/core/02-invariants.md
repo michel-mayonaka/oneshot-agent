@@ -3,11 +3,12 @@
 ## I-01 入出力契約: run_dir と成果物
 保証:
 - run_dir は `ONESHOT_RUNS_DIR` 配下に作成されます。
-- 省略時は `worklogs/` 配下になります。
+- `ONESHOT_RUNS_DIR` 省略時は `worklogs/` 配下になります。
+- `oneshot-exec.sh` は `worklogs/<run_id>` を使います。
+- `run-oneshot.sh` は `worklogs/<spec>/<run_id>` を使います。
 - `oneshot-exec.sh` は `logs/` を作成します。
 - `prompts/` と `inputs/` も作成します。
 - `-C` 省略時は `artifacts/` を作成します。
-- `run-oneshot.sh` は `worklogs/<spec>/<run_id>` を使います。
 仮定:
 - `ONESHOT_AGENT_ROOT` が設定済みです。
 理由:
