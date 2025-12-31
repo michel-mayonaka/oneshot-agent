@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Very small jq mock that returns deterministic content
+filter=""
+input=""
+for arg in "$@"; do
+  case "$arg" in
+    -* ) ;;
+    *.jsonl|*.json )
+      input="$arg"
+      ;;
+    * )
+      if [[ -z "$filter" ]]; then
+        filter="$arg"
+      fi
+      ;;
+  esac
+  done
+
+if [[ "$filter" == *"turn.completed"* || "$filter" == *".usage"* ]]; then
+  echo '{"input_tokens":1,"output_tokens":2,"total_tokens":3}'
+  exit 0
+fi
+
+if [[ "$filter" == *"command_execution"* ]]; then
+  echo '{"command":"echo hi","status":"ok","exit_code":0,"output":"hi"}'
+  exit 0
+fi
+
+if [[ "$filter" == *"## Command"* ]]; then
+  echo "## Command 1"
+  echo "- command: \`echo hi\`"
+  echo "- status: ok"
+  echo "- exit_code: 0"
+  exit 0
+fi
+
+if [[ "$filter" == *"agent_message"* ]]; then
+  echo "### agent_message"
+  echo "hello"
+  exit 0
+fi
+
+if [[ "$filter" == *"map(select"* ]]; then
+  echo "last message"
+  exit 0
+fi
+
+# Default: pass through
+cat "$input" 2>/dev/null || true

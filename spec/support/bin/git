@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -n "${GIT_MOCK_LOG:-}" ]]; then
+  echo "git $*" >> "$GIT_MOCK_LOG"
+fi
+
+repo=""
+if [[ "${1:-}" == "-C" ]]; then
+  repo="$2"
+  shift 2
+fi
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  rev-parse)
+    case "${1:-}" in
+      --git-dir)
+        exit "${GIT_MOCK_GIT_DIR_STATUS:-0}"
+        ;;
+      --abbrev-ref)
+        echo "${GIT_MOCK_BRANCH:-main}"
+        exit 0
+        ;;
+      --short)
+        echo "${GIT_MOCK_COMMIT:-abc123}"
+        exit 0
+        ;;
+      --is-inside-work-tree)
+        if [[ "${GIT_MOCK_INSIDE_WORKTREE:-1}" == "1" ]]; then
+          echo "true"
+          exit 0
+        fi
+        exit 1
+        ;;
+      --show-toplevel)
+        echo "${GIT_MOCK_TOPLEVEL:-$repo}"
+        exit 0
+        ;;
+    esac
+    ;;
+  symbolic-ref)
+    if [[ "${1:-}" == "--short" ]]; then
+      echo "${GIT_MOCK_ORIGIN_HEAD:-origin/main}"
+      exit 0
+    fi
+    ;;
+  status)
+    if [[ "${1:-}" == "--porcelain" ]]; then
+      echo "${GIT_MOCK_STATUS:-}"
+      exit 0
+    fi
+    ;;
+  diff)
+    if [[ "${1:-}" == "--name-status" ]]; then
+      echo "${GIT_MOCK_DIFF_NAMESTATUS:-}"
+      exit 0
+    fi
+    if [[ "${1:-}" == "--stat" ]]; then
+      echo "${GIT_MOCK_DIFF_STAT:-}"
+      exit 0
+    fi
+    echo "${GIT_MOCK_DIFF_BODY:-}"
+    exit 0
+    ;;
+  show-ref)
+    if [[ "${GIT_MOCK_SHOW_REF_EXISTS:-0}" == "1" ]]; then
+      exit 0
+    fi
+    exit 1
+    ;;
+  worktree)
+    sub="${1:-}"
+    shift || true
+    case "$sub" in
+      add)
+        if [[ "${1:-}" == "-b" ]]; then
+          dir="${3:-}"
+        else
+          dir="${1:-}"
+        fi
+        if [[ -n "${dir:-}" ]]; then
+          mkdir -p "$dir"
+        fi
+        exit 0
+        ;;
+      remove)
+        dir="${@: -1}"
+        if [[ -n "${dir:-}" ]]; then
+          rm -rf "$dir"
+        fi
+        exit 0
+        ;;
+    esac
+    ;;
+  add)
+    exit 0
+    ;;
+  commit)
+    exit 0
+    ;;
+  rev-list)
+    echo "${GIT_MOCK_REVLIST_COUNT:-1}"
+    exit 0
+    ;;
+  push)
+    exit 0
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Simple mock for codex CLI
+if [[ "${1:-}" == "exec" ]]; then
+  shift
+fi
+
+# Drain stdin to avoid SIGPIPE in pipelines
+if ! [ -t 0 ]; then
+  cat >/dev/null || true
+fi
+
+if [[ " $* " == *" --json "* ]]; then
+  cat <<'JSON'
+{"type":"item.completed","item":{"type":"agent_message","text":"hello"}}
+{"type":"item.completed","item":{"type":"reasoning","text":"reason"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"echo hi","status":"ok","exit_code":0,"aggregated_output":"hi"}}
+{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":2,"total_tokens":3}}
+JSON
+  exit 0
+fi
+
+if [[ -n "${CODEX_OUTPUT:-}" ]]; then
+  printf '%s' "$CODEX_OUTPUT"
+  exit 0
+fi
+
+cat <<'YAML'
+title: テストPR
+body: |
+  # 概要
+  - テスト
+
+  # 変更点
+  - ダミー
+
+  # 影響範囲
+  - なし
+
+  # 確認コマンド
+  - 未実行
+YAML

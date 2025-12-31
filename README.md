@@ -80,6 +80,23 @@ spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として sp
 - `ONESHOT_PR_MODEL`: PR下書き生成用モデル指定（既定: `gpt-5.2`）。
 - `ONESHOT_PR_DIFF_MAX_LINES`: PR下書き生成に使う diff の最大行数（既定: 2000）。
 
+## テスト
+ShellSpec で `core/` 配下のシェルをテストします。
+
+### 導入
+```bash
+bash tools/install-shellspec.sh
+```
+
+### 実行
+```bash
+make test
+```
+
+`make test` は以下を実行します:
+- ShellSpec のユニットテスト（`spec/`）
+- 既存の `make test` 相当（render-only の動作確認）
+
 ### Spec 仕様（概要）
 最小構成:
 ```yaml

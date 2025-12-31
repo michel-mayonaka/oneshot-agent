@@ -96,10 +96,9 @@ if [[ ! -d "$WORKTREE_DIR" ]]; then
   exit 1
 fi
 
-REMOVE_ARGS=()
 if [[ $FORCE -eq 1 ]]; then
-  REMOVE_ARGS=(--force)
+  git -C "$REPO_DIR" worktree remove --force "$WORKTREE_DIR"
+else
+  git -C "$REPO_DIR" worktree remove "$WORKTREE_DIR"
 fi
-
-git -C "$REPO_DIR" worktree remove "${REMOVE_ARGS[@]}" "$WORKTREE_DIR"
 echo "removed_worktree=$WORKTREE_DIR"

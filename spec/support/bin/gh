@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "https://example.com/pr/1"

@@ -7,3 +7,5 @@ playground/*
 !playground/.gitkeep
 
 .envrc
+.DS_Store
+tools/shellspec/
