@@ -14,8 +14,7 @@ YAML spec (flat):
   target_dir: /path/to/project
   worktree: true
   pr: true
-  pr_title: "..."
-  pr_body_file: /path/to/body.md
+  pr_yml: true
   pr_draft: true
   disable_global_skills: true
 
@@ -24,6 +23,7 @@ Notes:
 - target_dir 未指定時は ONESHOT_PROJECT_ROOT -> PROJECT_ROOT -> PWD の順で使用。
 - inputs は __INPUT_<KEY>__ に置換される（KEYは大文字化）。
 - --input のパスは ONESHOT_AGENT_ROOT からの相対パスとして解決される。
+- pr_yml は worktree: true が前提（worklogs/<spec>/<run_id>/worktree を参照）。
 USAGE
 }
 
@@ -105,8 +105,7 @@ PROMPT_TEXT=""
 TARGET_DIR=""
 USE_WORKTREE=""
 PR_ENABLED=""
-PR_TITLE=""
-PR_BODY_FILE=""
+PR_YML=""
 PR_DRAFT=""
 DISABLE_GLOBAL=""
 SKILLS=()
@@ -171,8 +170,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       target_dir) TARGET_DIR="$val" ;;
       worktree) USE_WORKTREE="$val" ;;
       pr) PR_ENABLED="$val" ;;
-      pr_title) PR_TITLE="$val" ;;
-      pr_body_file) PR_BODY_FILE="$val" ;;
+      pr_yml) PR_YML="$val" ;;
       pr_draft) PR_DRAFT="$val" ;;
       disable_global_skills) DISABLE_GLOBAL="$val" ;;
       *) : ;;
@@ -230,8 +228,10 @@ fi
 
 # スクリプト/ルートの解決
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$SCRIPT_DIR/.."
-ONESHOT="$ROOT_DIR/core/oneshot-exec.sh"
+: "${ONESHOT_AGENT_ROOT:?ONESHOT_AGENT_ROOT is not set}"
+AGENT_ROOT="$ONESHOT_AGENT_ROOT"
+ROOT_DIR="$AGENT_ROOT"
+ONESHOT="$AGENT_ROOT/core/oneshot-exec.sh"
 
 if [[ ! -x "$ONESHOT" ]]; then
   echo "oneshot-exec.sh not found: $ONESHOT" >&2
@@ -240,7 +240,7 @@ fi
 
 # run_id とログ先を確定（早めにログを開始）
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
-RUNS_DIR="$ROOT_DIR/worklogs/$NAME"
+RUNS_DIR="$AGENT_ROOT/worklogs/$NAME"
 mkdir -p "$RUNS_DIR"
 RUN_DIR_PREP="$RUNS_DIR/$RUN_ID"
 mkdir -p "$RUN_DIR_PREP/logs"
@@ -271,7 +271,7 @@ if [[ -n "$PROMPT_FILE" ]]; then
   if [[ "$PROMPT_FILE" = /* ]]; then
     PROMPT_PATH="$PROMPT_FILE"
   else
-    PROMPT_PATH="$ROOT_DIR/$PROMPT_FILE"
+    PROMPT_PATH="$AGENT_ROOT/$PROMPT_FILE"
   fi
 else
   PROMPT_PATH="$TMP_DIR/prompt.txt"
@@ -427,31 +427,58 @@ if [[ -n "$RUN_DIR" ]]; then
   done
 fi
 
+# PR下書きYAML生成（有効時のみ）
+if [[ "$PR_YML" == "true" || "$PR_YML" == "1" ]]; then
+  if [[ -z "$RUN_DIR" ]]; then
+    echo "run_dir not found; cannot generate pr.yml" >&2
+    exit 1
+  fi
+  if [[ -z "$WORKTREE_DIR" ]]; then
+    echo "pr_yml requires worktree: true" >&2
+    exit 1
+  fi
+  PR_YML_SCRIPT="$ROOT_DIR/core/generate-pr-yml.sh"
+  if [[ ! -x "$PR_YML_SCRIPT" ]]; then
+    echo "generate-pr-yml.sh not found: $PR_YML_SCRIPT" >&2
+    exit 1
+  fi
+  PR_YML_OUTPUT="$("$PR_YML_SCRIPT" "$RUN_DIR")"
+  emit "$PR_YML_OUTPUT"
+fi
+
 # PR作成（有効時のみ）
 if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
+  if [[ -z "$RUN_DIR" ]]; then
+    echo "run_dir not found; cannot create PR" >&2
+    exit 1
+  fi
+  if [[ -z "$WORKTREE_DIR" ]]; then
+    echo "pr requires worktree: true" >&2
+    exit 1
+  fi
+  PR_YML_PATH="$RUN_DIR/pr.yml"
+  if [[ ! -f "$PR_YML_PATH" ]]; then
+    PR_YML_SCRIPT="$ROOT_DIR/core/generate-pr-yml.sh"
+    if [[ ! -x "$PR_YML_SCRIPT" ]]; then
+      echo "generate-pr-yml.sh not found: $PR_YML_SCRIPT" >&2
+      exit 1
+    fi
+    PR_YML_OUTPUT="$("$PR_YML_SCRIPT" "$RUN_DIR")"
+    emit "$PR_YML_OUTPUT"
+  fi
+
   PR_SCRIPT="$ROOT_DIR/core/create-pr.sh"
   if [[ ! -x "$PR_SCRIPT" ]]; then
     echo "create-pr.sh not found: $PR_SCRIPT" >&2
     exit 1
   fi
 
-  PR_ARGS=(--repo "$REPO_DIR" --worktree "$TARGET_DIR")
+  PR_ARGS=(--repo "$REPO_DIR" --worktree "$TARGET_DIR" --pr-yml "$PR_YML_PATH")
   if [[ -n "$WORKTREE_BRANCH" ]]; then
     PR_ARGS+=(--branch "$WORKTREE_BRANCH")
   fi
   if [[ -n "$WORKTREE_BASE" ]]; then
     PR_ARGS+=(--base "$WORKTREE_BASE")
-  fi
-  if [[ -n "$PR_TITLE" ]]; then
-    PR_ARGS+=(--title "$PR_TITLE")
-  fi
-  if [[ -n "$PR_BODY_FILE" ]]; then
-    if [[ "$PR_BODY_FILE" != /* ]]; then
-      PR_BODY_FILE="$ROOT_DIR/$PR_BODY_FILE"
-    fi
-    PR_ARGS+=(--body-file "$PR_BODY_FILE")
-  elif [[ -n "$RUN_DIR" && -f "$RUN_DIR/report.md" ]]; then
-    PR_ARGS+=(--report "$RUN_DIR/report.md")
   fi
   if [[ "$PR_DRAFT" == "true" || "$PR_DRAFT" == "1" ]]; then
     PR_ARGS+=(--draft)

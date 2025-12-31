@@ -41,11 +41,15 @@ fi
 # スクリプト自身のディレクトリ（core/）を解決
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# リポジトリルート（ONESHOT_AGENT_ROOT 必須）
+: "${ONESHOT_AGENT_ROOT:?ONESHOT_AGENT_ROOT is not set}"
+AGENT_ROOT="$ONESHOT_AGENT_ROOT"
+
 RUN_ID="${ONESHOT_RUN_ID:-}"
 if [[ -z "$RUN_ID" ]]; then
   RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
 fi
-RUNS_DIR="${ONESHOT_RUNS_DIR:-$SCRIPT_DIR/../worklogs}"
+RUNS_DIR="${ONESHOT_RUNS_DIR:-$AGENT_ROOT/worklogs}"
 RUN_DIR="$RUNS_DIR/$RUN_ID"
 mkdir -p "$RUN_DIR"
 mkdir -p "$RUN_DIR/logs" "$RUN_DIR/prompts" "$RUN_DIR/inputs"
@@ -77,7 +81,7 @@ fi
 
 # skills を解決して最終プロンプトを組み立てる
 GLOBAL_SKILL_FILES=()
-GLOBAL_SKILLS_DIR="$SCRIPT_DIR/../skills/global"
+GLOBAL_SKILLS_DIR="$AGENT_ROOT/skills/global"
 if [[ -z "${ONESHOT_DISABLE_GLOBAL_SKILLS:-}" && -d "$GLOBAL_SKILLS_DIR" ]]; then
   # 全ての *.md を読み込む（存在しない場合はスキップ）
   while IFS= read -r f; do
@@ -101,7 +105,7 @@ done
 set -u
 
 OPTIONAL_SKILL_FILES=()
-OPTIONAL_SKILLS_DIR="$SCRIPT_DIR/../skills/optional"
+OPTIONAL_SKILLS_DIR="$AGENT_ROOT/skills/optional"
 if [[ -d "$OPTIONAL_SKILLS_DIR" ]]; then
   set +u
   if [[ ${#OPTIONAL_SKILL_NAMES[@]} -gt 0 ]]; then
@@ -120,12 +124,12 @@ fi
 # skills_used.txt に記録
 : > "$SKILLS_USED_FILE"
 for f in "${GLOBAL_SKILL_FILES[@]}"; do
-  rel="${f#"$SCRIPT_DIR/../"}"
+  rel="${f#"$AGENT_ROOT/"}"
   echo "$rel" >> "$SKILLS_USED_FILE"
 done
 set +u
 for f in "${OPTIONAL_SKILL_FILES[@]}"; do
-  rel="${f#"$SCRIPT_DIR/../"}"
+  rel="${f#"$AGENT_ROOT/"}"
   echo "$rel" >> "$SKILLS_USED_FILE"
 done
 set -u
@@ -135,7 +139,7 @@ set -u
   if [[ ${#GLOBAL_SKILL_FILES[@]} -gt 0 ]]; then
     echo "# Agent Skills (global)"
     for f in "${GLOBAL_SKILL_FILES[@]}"; do
-      rel="${f#"$SCRIPT_DIR/../"}"
+      rel="${f#"$AGENT_ROOT/"}"
       echo ""
       echo "## skill: ${rel}"
       echo ""
@@ -149,7 +153,7 @@ set -u
   if [[ ${#OPTIONAL_SKILL_FILES[@]} -gt 0 ]]; then
     echo "# Agent Skills (optional)"
     for f in "${OPTIONAL_SKILL_FILES[@]}"; do
-      rel="${f#"$SCRIPT_DIR/../"}"
+      rel="${f#"$AGENT_ROOT/"}"
       echo ""
       echo "## skill: ${rel}"
       echo ""

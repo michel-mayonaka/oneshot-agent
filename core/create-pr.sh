@@ -3,19 +3,15 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: create-pr.sh --repo <repo_dir> --worktree <dir> [--branch <name>] [--base <branch>]
-                    [--title <title>] [--body-file <path>] [--report <path>] [--heading <name>]
-                    [--commit-message <msg>] [--draft]
+Usage: create-pr.sh --repo <repo_dir> --worktree <dir> --pr-yml <path>
+                    [--branch <name>] [--base <branch>] [--commit-message <msg>] [--draft]
 
 Options:
   --repo            Gitリポジトリのルートパス
   --worktree        worktree のパス
+  --pr-yml          PR情報のYAML（title/body）ファイル
   --branch          ブランチ名（省略時は worktree の現在ブランチ）
   --base            ベースブランチ（省略時は origin/HEAD -> main の順で推定）
-  --title           PRタイトル（省略時は最新コミットの件名）
-  --body-file       PR本文ファイル（省略時は空）
-  --report          report.md から PR情報 を抽出する場合のパス
-  --heading         PR情報の見出し名（省略時は「PR情報」）
   --commit-message  変更が未コミットの場合に使うコミットメッセージ
   --draft           Draft PRとして作成
 USAGE
@@ -23,12 +19,9 @@ USAGE
 
 REPO_DIR=""
 WORKTREE_DIR=""
+PR_YML=""
 BRANCH=""
 BASE_BRANCH=""
-PR_TITLE=""
-PR_BODY_FILE=""
-REPORT_FILE=""
-HEADING="PR情報"
 COMMIT_MESSAGE=""
 DRAFT=0
 
@@ -42,28 +35,16 @@ while [[ $# -gt 0 ]]; do
       WORKTREE_DIR="$2"
       shift 2
       ;;
+    --pr-yml)
+      PR_YML="$2"
+      shift 2
+      ;;
     --branch)
       BRANCH="$2"
       shift 2
       ;;
     --base)
       BASE_BRANCH="$2"
-      shift 2
-      ;;
-    --title)
-      PR_TITLE="$2"
-      shift 2
-      ;;
-    --body-file)
-      PR_BODY_FILE="$2"
-      shift 2
-      ;;
-    --report)
-      REPORT_FILE="$2"
-      shift 2
-      ;;
-    --heading)
-      HEADING="$2"
       shift 2
       ;;
     --commit-message)
@@ -86,7 +67,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$REPO_DIR" || -z "$WORKTREE_DIR" ]]; then
+if [[ -z "$REPO_DIR" || -z "$WORKTREE_DIR" || -z "$PR_YML" ]]; then
   usage
   exit 1
 fi
@@ -98,6 +79,11 @@ fi
 
 if [[ ! -d "$WORKTREE_DIR" ]]; then
   echo "Worktree dir not found: $WORKTREE_DIR" >&2
+  exit 1
+fi
+
+if [[ ! -f "$PR_YML" ]]; then
+  echo "pr.yml not found: $PR_YML" >&2
   exit 1
 fi
 
@@ -126,119 +112,75 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ -n "$REPORT_FILE" && -f "$REPORT_FILE" && -z "$PR_BODY_FILE" ]]; then
-  TMP_BODY="$(mktemp)"
-  PR_TITLE_FROM_REPORT="$(
-    python3 - "$REPORT_FILE" "$HEADING" "$TMP_BODY" <<'PY'
+TMP_BODY="$(mktemp)"
+PR_TITLE="$(
+  python3 - "$PR_YML" "$TMP_BODY" <<'PY'
 import sys
 from pathlib import Path
 
-report_path = Path(sys.argv[1])
-heading = sys.argv[2]
-out_path = Path(sys.argv[3])
-
-text = report_path.read_text()
+path = Path(sys.argv[1])
+out_path = Path(sys.argv[2])
+text = path.read_text()
 lines = text.splitlines()
 
-blocks = []
-current = None
-def is_heading(line):
-    line = line.strip()
-    if line == f"## {heading}":
-        return True
-    if line in (f"**{heading}**", f"**{heading}** "):
-        return True
-    return False
-
-for line in lines:
-    if is_heading(line):
-        if current is not None:
-            blocks.append(current)
-        current = []
-        continue
-    if current is not None:
-        if line.startswith("## "):
-            blocks.append(current)
-            current = None
+def parse_simple_yaml(lines):
+    data = {}
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            i += 1
             continue
-        current.append(line)
-if current is not None:
-    blocks.append(current)
-
-def parse_block(block):
-    title = ""
-    body_lines = []
-    in_body = False
-    for line in block:
-        if line.startswith("タイトル:"):
-            title = line.replace("タイトル:", "", 1).strip()
+        if line.startswith((" ", "\t")):
+            i += 1
             continue
-        if line.startswith("本文:") or line.startswith("説明:"):
-            body_lines.append(line.split(":", 1)[1].strip())
-            in_body = True
+        if ":" not in line:
+            i += 1
             continue
-        if in_body:
-            body_lines.append(line)
-    if not body_lines:
-        body_lines = block
-    body = "\n".join(body_lines).strip()
-    if body:
-        body_split = body.splitlines()
-        if len(body_split) >= 2:
-            first = body_split[0].strip()
-            last = body_split[-1].strip()
-            if first.startswith("```") and last.startswith("```"):
-                body = "\n".join(body_split[1:-1]).strip()
-    return title, body
+        key, rest = line.split(":", 1)
+        key = key.strip()
+        rest = rest.strip()
+        if rest in ("|", "|-", ">", ">-"):
+            i += 1
+            block = []
+            while i < len(lines):
+                l = lines[i]
+                if l.startswith((" ", "\t")):
+                    block.append(l[1:] if l.startswith(" ") else l.lstrip("\t"))
+                    i += 1
+                    continue
+                if l == "":
+                    if i + 1 < len(lines) and lines[i + 1].startswith((" ", "\t")):
+                        block.append("")
+                        i += 1
+                        continue
+                break
+            data[key] = "\n".join(block).rstrip("\n")
+            continue
+        if (rest.startswith('"') and rest.endswith('"')) or (rest.startswith("'") and rest.endswith("'")):
+            rest = rest[1:-1]
+        data[key] = rest
+        i += 1
+    return data
 
-def is_placeholder(title, body):
-    bad = ["<", ">", "簡潔なPRタイトル", "注意:"]
-    if not title:
-        return True
-    if any(x in title for x in bad):
-        return True
-    if any(x in body for x in bad):
-        return True
-    return False
+data = parse_simple_yaml(lines)
+title = data.get("title", "").strip()
+body = data.get("body", "").rstrip()
 
-selected_title = ""
-selected_body = ""
-for block in blocks[::-1]:
-    title, body = parse_block(block)
-    if is_placeholder(title, body):
-        continue
-    selected_title = title
-    selected_body = body
-    break
-
-if selected_body:
-    out_path.write_text(selected_body + "\n")
-    print(selected_title)
-else:
+if not title or not body:
+    print("", end="")
     out_path.write_text("")
-    print("")
-PY
-  )"
+    sys.exit(0)
 
-  if [[ -n "$PR_TITLE_FROM_REPORT" ]]; then
-    if [[ -z "$PR_TITLE" ]]; then
-      PR_TITLE="$PR_TITLE_FROM_REPORT"
-    fi
-    if [[ -s "$TMP_BODY" ]]; then
-      PR_BODY_FILE="$TMP_BODY"
-    fi
-  else
-    rm -f "$TMP_BODY"
-    TMP_BODY=""
-  fi
-fi
+out_path.write_text(body + "\n")
+print(title)
+PY
+)"
 
 if [[ -z "$PR_TITLE" ]]; then
-  PR_TITLE="$(git -C "$WORKTREE_DIR" log -1 --pretty=%s)"
-fi
-
-if [[ -z "$PR_BODY_FILE" ]]; then
-  PR_BODY_FILE=""
+  echo "Failed to read title/body from pr.yml: $PR_YML" >&2
+  exit 1
 fi
 
 if [[ -n "$(git -C "$WORKTREE_DIR" status --porcelain)" ]]; then
@@ -251,17 +193,13 @@ fi
 
 if [[ "$(git -C "$WORKTREE_DIR" rev-list --count "${BASE_BRANCH}..${BRANCH}")" == "0" ]]; then
   echo "No commits to open PR (base=${BASE_BRANCH}, branch=${BRANCH})" >&2
-  exit 1
+  echo "pr_skipped=1"
+  exit 0
 fi
 
 git -C "$WORKTREE_DIR" push -u origin "$BRANCH"
 
-PR_ARGS=(pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "$PR_TITLE")
-if [[ -n "$PR_BODY_FILE" && -f "$PR_BODY_FILE" ]]; then
-  PR_ARGS+=(--body-file "$PR_BODY_FILE")
-else
-  PR_ARGS+=(--body "")
-fi
+PR_ARGS=(pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "$PR_TITLE" --body-file "$TMP_BODY")
 if [[ $DRAFT -eq 1 ]]; then
   PR_ARGS+=(--draft)
 fi

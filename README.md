@@ -66,7 +66,8 @@ spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として sp
 - render-only: `--render-only` で置換結果のみ出力して終了。
 - worktree: `worktree` 未指定時は `true`（`worktree: true` で `worklogs/<spec>/<run_id>/worktree` に worktree を作成して実行）。
 - worktree 削除: `core/remove-worktree.sh` で run_id から削除可能。
-- PR 作成: `pr: true` で `core/create-pr.sh` を実行（GitHub CLI が必要）。PR 有効時は `pr-draft` スキルを自動追加。
+- PR 作成: `pr: true` で `core/create-pr.sh` を実行（GitHub CLI が必要）。`pr.yml` を使ってタイトル/本文を作成。PR 有効時は `pr-draft` スキルを自動追加。
+- PR下書きYAML作成: `pr_yml: true` で `core/generate-pr-yml.sh` を実行（`worklogs/<spec>/<run_id>/pr.yml` を生成）。
 - global skills 無効化: `disable_global_skills: true` で `skills/global` を無効化。
 
 ### 6. oneshot-exec の補助オプション/環境変数
@@ -76,6 +77,8 @@ spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として sp
 - `ONESHOT_AUTO_TRANSLATE_WORKLOG=1`: 実行後に `worklog.md` を日本語翻訳。
 - `ONESHOT_TRANSLATE_MODEL`: 翻訳用モデル指定（既定: `gpt-5.2`）。
   - 注: 翻訳スクリプトは `worklogs/<spec>/<run_id>/worklog.md` を参照します（ログ本体は `worklogs/<spec>/<run_id>/logs/worklog.md` に出力されます）。
+- `ONESHOT_PR_MODEL`: PR下書き生成用モデル指定（既定: `gpt-5.2`）。
+- `ONESHOT_PR_DIFF_MAX_LINES`: PR下書き生成に使う diff の最大行数（既定: 2000）。
 
 ### Spec 仕様（概要）
 最小構成:
@@ -92,8 +95,7 @@ skills:
 - `target_dir`: 実行ディレクトリ（未指定時は `ONESHOT_PROJECT_ROOT` → `PROJECT_ROOT` → `PWD`）
 - `worktree`: `true`/`1` で worktree 実行
 - `pr`: `true`/`1` で PR 作成
-- `pr_title`: PR タイトル
-- `pr_body_file`: PR 本文ファイル
+- `pr_yml`: `true`/`1` で PR下書きYAML（`pr.yml`）を生成
 - `pr_draft`: `true`/`1` で Draft PR
 - `disable_global_skills`: `true`/`1` で global skills を無効化
 
@@ -136,7 +138,7 @@ bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
 
 ## ディレクトリ構成
 - ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `skills/`
-- `core/`: 実行スクリプト（`oneshot-exec.sh`, `run-oneshot.sh`, `summarize_run.sh`, `create-worktree.sh`, `remove-worktree.sh`, `create-pr.sh`, `translate-worklog-to-ja.sh`）
+- `core/`: 実行スクリプト（`oneshot-exec.sh`, `run-oneshot.sh`, `summarize_run.sh`, `create-worktree.sh`, `remove-worktree.sh`, `create-pr.sh`, `generate-pr-yml.sh`, `translate-worklog-to-ja.sh`）
 - `specs/`: run-oneshot 用の YAML 定義
 - `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
 - `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル
