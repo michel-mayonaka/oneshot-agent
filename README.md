@@ -1,179 +1,61 @@
 # oneshot-agent
 
-Codex CLI に「ワンショットで仕事を投げる」ための、シンプルなハーネスです。  
-単一プロンプトを実行し、そのときのイベントログとレポートを `worklogs/` に保存します。
+Codex CLI を1回実行し、ログと成果物を残すハーネスです。
+ワークフローの入口に徹し、詳細は docs/ に集約します。
 
-## 前提条件
-- Codex CLI (`codex` コマンド) がインストール済みで `PATH` に通っていること
-- `bash`, `jq`, `git` が利用可能であること（`jq` はサマリ生成で使用、無い場合は一部情報が省略されます）
-- PR 作成を使う場合は GitHub CLI (`gh`) が必要
+## できること
+- 単一プロンプト実行とログ保存。
+- spec YAML による実行の定型化。
+- worktree を使った安全な作業ディレクトリ。
+- 実行サマリーレポートの生成。
+- PR下書きやPR作成の補助（要 gh）。
 
-## 使い方
-### 1. 0→1 用（デフォルト）
-任意のプロンプト文字列、またはプロンプトファイルを渡して実行します。  
-生成物は `worklogs/<spec>/<run_id>/artifacts/` 配下に作られます。
+## できないこと
+- ジョブキューやスケジューラ運用。
+- 自動リトライやバックオフ。
+- ログの自動マスキング。
+- プロンプトサイズの自動制御（未実装）。
+
+## クイックスタート
+前提: `codex` と `jq` が PATH にあります。
+前提: `ONESHOT_AGENT_ROOT` に本リポジトリを設定します。
 
 ```bash
-bash core/oneshot-exec.sh "Create a small CLI tool in Go"
-# 既存リポジトリで実行する場合
-bash core/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use tool X"
+export ONESHOT_AGENT_ROOT="$(pwd)"
+bash core/oneshot-exec.sh "List files and summarize"
 ```
 
-各実行は一意な `run_id` を持ち、`worklogs/<spec>/<run_id>/` に以下のように保存されます:
-- `report.md`: 人間向けの実行レポート
-- `prompts/`: `prompt.raw.txt`, `prompt.txt`, `skills_used.txt`
-- `logs/`: `events.jsonl`, `worklog.md`, `worklog.commands.md`, `commands.jsonl`, `stderr_and_time.txt`, `usage.json`
-- `inputs/`: `inputs.txt` など参照入力
-- `artifacts/`: 生成物
-
-※ `core/run-oneshot.sh` 経由の実行は `worklogs/<spec名>/<run_id>/` 配下に保存されます。
-
-### 2. 既存リポジトリに対して実行する（-C）
-既存プロジェクトのディレクトリを `-C` で指定すると、そのディレクトリをカレントディレクトリとして Codex を実行できます。
+spec 実行の最小例です。
 
 ```bash
-bash core/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use tool X"
-```
-
-`worklogs/` は常にこのハーネス側に生成されるため、ターゲットリポジトリはログで汚れません。
-
-### 3. 実行結果の要約
-特定の run に対してサマリーレポートを生成します。
-
-```bash
-bash core/summarize_run.sh worklogs/<spec>/<run_id>
-```
-
-生成される `report.md` には、使用トークン数・経過時間・Git 状態・プロンプト/出力の抜粋などが含まれます。
-
-### 4. Spec + Makefile で実行する
-YAML の spec を `core/run-oneshot.sh` に渡して実行できます。`worklogs/<spec名>/<run_id>/` にログを格納します。
-
-```bash
+export ONESHOT_AGENT_ROOT="$(pwd)"
 bash core/run-oneshot.sh --spec specs/doc-audit.yml
-make doc-audit
-make doc-fix
-# 任意のレポートを使う場合:
-# make doc-fix REPORT=worklogs/doc-audit/<run_id>/report.md
-make test
 ```
 
-spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として spec 内に書きます。
+生成物は `worklogs/` 配下に保存されます。
 
-### 5. run-oneshot の主な機能
-- inputs 置換: `--input key=relative/path` で `__INPUT_<KEY>__` を置換（KEY は大文字化）。パスは `ONESHOT_AGENT_ROOT` 基準。
-- audit_report 置換: `--audit-report <file>` で `__INPUT_AUDIT_REPORT__` を置換。
-- render-only: `--render-only` で置換結果のみ出力して終了。
-- worktree: `worktree` 未指定時は `true`（`worktree: true` で `worklogs/<spec>/<run_id>/worktree` に worktree を作成して実行）。
-- worktree 削除: `core/remove-worktree.sh` で run_id から削除可能。
-- PR 作成: `pr: true` で `core/create-pr.sh` を実行（GitHub CLI が必要）。`pr.yml` を使ってタイトル/本文を作成。PR 有効時は `pr-draft` スキルを自動追加。
-- PR下書きYAML作成: `pr_yml: true` で `core/generate-pr-yml.sh` を実行（`worklogs/<spec>/<run_id>/pr.yml` を生成）。
-- global skills 無効化: `disable_global_skills: true` で `skills/global` を無効化。
+## ドキュメント
+- docs/core/01-purpose.md
+- docs/core/02-invariants.md
+- docs/core/03-architecture.md
+- docs/core/04-workflow.md
+- docs/core/05-decisions.md
+- docs/core/adr/0001-record-architecture-decisions.md
 
-### 6. oneshot-exec の補助オプション/環境変数
-- `-s foo,bar`: `skills/optional/foo.md` 等を追加読み込み。
-- `ONESHOT_SKILLS`: 追加スキル（カンマ区切り）。
-- `ONESHOT_DISABLE_GLOBAL_SKILLS=1`: global skills を無効化。
-- `ONESHOT_AUTO_TRANSLATE_WORKLOG=1`: 実行後に `worklog.md` を日本語翻訳。
-- `ONESHOT_TRANSLATE_MODEL`: 翻訳用モデル指定（既定: `gpt-5.2`）。
-  - 注: 翻訳スクリプトは `worklogs/<spec>/<run_id>/worklog.md` を参照します（ログ本体は `worklogs/<spec>/<run_id>/logs/worklog.md` に出力されます）。
-- `ONESHOT_PR_MODEL`: PR下書き生成用モデル指定（既定: `gpt-5.2`）。
-- `ONESHOT_PR_DIFF_MAX_LINES`: PR下書き生成に使う diff の最大行数（既定: 2000）。
+## 問い合わせ / Issue
+GitHub Issue を利用してください。
 
-## テスト
-ShellSpec で `core/` 配下のシェルをテストします。
+必要情報テンプレ:
+- 目的と期待する結果
+- 実行コマンド
+- `run_dir` のパス
+- `logs/stderr_and_time.txt` の抜粋
+- OS とシェル
+- 秘密情報は伏せること
 
-### 導入
-```bash
-bash tools/install-shellspec.sh
-```
+## 保証
+- `worklogs/` に実行ログを残します（現行実装）。
 
-### 実行
-```bash
-make test
-```
-
-`make test` は以下を実行します:
-- ShellSpec のユニットテスト（`spec/`）
-- 既存の `make test` 相当（render-only の動作確認）
-
-### Spec 仕様（概要）
-最小構成:
-```yaml
-name: doc-audit
-prompt_text: |
-  ここにプロンプト本文
-skills:
-  - doc-audit
-```
-
-任意キー:
-- `prompt_file`: `prompt_text` の代わりにファイルパスを指定
-- `target_dir`: 実行ディレクトリ（未指定時は `ONESHOT_PROJECT_ROOT` → `PROJECT_ROOT` → `PWD`）
-- `worktree`: `true`/`1` で worktree 実行
-- `pr`: `true`/`1` で PR 作成
-- `pr_yml`: `true`/`1` で PR下書きYAML（`pr.yml`）を生成
-- `pr_draft`: `true`/`1` で Draft PR
-- `disable_global_skills`: `true`/`1` で global skills を無効化
-
-注意:
-- `prompt_file` と `prompt_text` はどちらか一方のみ指定。
-
-inputs の置換（CLI）:
-- `--input key=relative/path` で指定したファイル内容を `__INPUT_<KEY>__` に展開します（KEYは大文字化）。
-- 相対パスは `ONESHOT_AGENT_ROOT` を基準に解決されます。
-
-## 他リポジトリへの組み込み例
-おすすめは「oneshot-agent はこのリポジトリで集中管理し、各プロジェクトにはラッパースクリプトだけ置く」運用です。
-
-1. 開発環境側で `ONESHOT_AGENT_ROOT` を設定:
-
-```bash
-export ONESHOT_AGENT_ROOT="$HOME/dev/oneshot-agent"  # このリポジトリのパス
-```
-
-2. 各プロジェクトに `scripts/oneshot.sh` を作成:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-: "${ONESHOT_AGENT_ROOT:?ONESHOT_AGENT_ROOT is not set}"
-
-"$ONESHOT_AGENT_ROOT/core/oneshot-exec.sh" -C "$(pwd)" "$@"
-```
-
-3. プロジェクト側での使い方:
-
-```bash
-# 既存リポジトリに対してエージェントを実行
-bash scripts/oneshot.sh "Add logging around DB queries"
-
-# プロジェクト固有のプロンプトファイルを用意して使う場合
-bash scripts/oneshot.sh oneshot/prompts/refactor-logging.md
-```
-
-## ディレクトリ構成
-- ルート: `AGENTS.md`, `README.md`, `Makefile`, `core/`, `specs/`, `skills/`
-- `core/`: 実行スクリプト（`oneshot-exec.sh`, `run-oneshot.sh`, `summarize_run.sh`, `create-worktree.sh`, `remove-worktree.sh`, `create-pr.sh`, `generate-pr-yml.sh`, `translate-worklog-to-ja.sh`）
-- `specs/`: run-oneshot 用の YAML 定義
-- `skills/global/`: すべての run に前置して読み込まれる共通スキル（Markdown）
-- `skills/optional/`: `-s` オプションや `ONESHOT_SKILLS` で明示的に指定する追加スキル
-- `worklogs/`: 各 run のログ・レポート・成果物（自動生成。通常は手動編集しない）
-
-より詳細な貢献ルールや運用方針は `AGENTS.md` を参照してください。
-
-## 将来の拡張（Skills とプロンプト制御）
-
-このハーネスは、将来的に次のような機能拡張を想定しています。
-
-- **Skills（エージェント用スキル）のバンドル**
-  - `skills/global/`: すべての run に自動的に読み込む共通ガイド。
-  - `skills/optional/`: 実行時オプション（例: `-s foo,bar`）や環境変数で明示的に指定するスキル。
-  - 実行時には、これらの Markdown をユーザープロンプトの前に連結した上で `prompt.txt` を生成し、`skills_used.txt` に使用スキルを記録する方針です。
-
-- **プロンプトサイズの計測とバリデーション**
-  - `prompt.txt` の文字数・概算トークン数を計測して `prompt_stats.txt` に保存し、`report.md` にもサイズ情報を載せる構想です（現状は未実装）。
-  - 閾値は環境変数（例: `ONESHOT_MAX_PROMPT_CHARS`, `ONESHOT_MAX_PROMPT_TOKENS`）で調整し、大きすぎる場合は警告、厳格モード（`ONESHOT_STRICT_PROMPT_LIMIT=1`）では実行中断も検討しています。
-
-実装を進める際は、まずこの README と `AGENTS.md` に記載した設計方針に沿って進めてください。
+## 仮定
+- `codex` と `jq` が動作します。
+- ログに秘密情報は含めません。
