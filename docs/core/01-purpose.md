@@ -24,12 +24,14 @@
 - run_id: 1回の実行を識別するID。
 - run_dir: `worklogs/<spec>/<run_id>` 配下。
 - spec: `specs/*.yml` の実行定義。
+- oneshot-exec: 単独実行の格納先名。
 - worktree: Git の作業コピー。
 - prompt.raw.txt: ユーザ入力の原文。
 - prompt.txt: skills 前置後の最終文。
 - skills: プロンプト前置のガイド群。
 - artifacts: 生成物の保存先。
 - worklog: 実行ログの可読版。
+- archive: 旧runの退避先。
 
 # 保証
 - 用語定義は本書を基準とします。

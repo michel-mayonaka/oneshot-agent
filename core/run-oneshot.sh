@@ -244,6 +244,11 @@ RUNS_DIR="$AGENT_ROOT/worklogs/$NAME"
 mkdir -p "$RUNS_DIR"
 RUN_DIR_PREP="$RUNS_DIR/$RUN_ID"
 mkdir -p "$RUN_DIR_PREP/logs"
+RUN_RUNNING_FILE="$RUN_DIR_PREP/.running"
+{
+  echo "pid=$$"
+  echo "started_at=$(date +%Y-%m-%dT%H:%M:%S%z)"
+} > "$RUN_RUNNING_FILE"
 RUN_ONESHOT_LOG="$RUN_DIR_PREP/logs/run-oneshot.log"
 {
   echo "run_id=$RUN_ID"
@@ -262,8 +267,43 @@ emit() {
 }
 
 TMP_DIR="$(mktemp -d)"
-cleanup() { rm -rf "$TMP_DIR"; }
+cleanup() {
+  rm -f "$RUN_RUNNING_FILE"
+  rm -rf "$TMP_DIR"
+}
 trap cleanup EXIT
+
+# 旧runをアーカイブ（実行中は除外）
+archive_old_runs() {
+  local runs_dir="$1"
+  local current_dir="$2"
+  local archive_dir="$runs_dir/archive"
+  local d
+  local base
+  local dest
+  local ts
+  mkdir -p "$archive_dir"
+  shopt -s nullglob
+  for d in "$runs_dir"/*; do
+    [[ "$d" == "$archive_dir" ]] && continue
+    [[ "$d" == "$current_dir" ]] && continue
+    [[ -d "$d" ]] || continue
+    [[ -f "$d/.running" ]] && continue
+    base="$(basename "$d")"
+    dest="$archive_dir/$base"
+    if [[ -e "$dest" ]]; then
+      ts="$(date +%Y%m%d-%H%M%S)"
+      dest="$archive_dir/$base.$ts"
+    fi
+    if [[ -e "$dest" ]]; then
+      dest="$archive_dir/$base.$RANDOM"
+    fi
+    mv "$d" "$dest"
+    emit "archived_run=$dest"
+  done
+  shopt -u nullglob
+}
+archive_old_runs "$RUNS_DIR" "$RUN_DIR_PREP"
 
 # prompt ファイル/テキストの解決
 PROMPT_PATH=""
@@ -391,6 +431,7 @@ if [[ ${#DISABLE_GLOBAL_ENV[@]} -gt 0 ]]; then
   set +e
   OUTPUT="$(ONESHOT_RUNS_DIR="$RUNS_DIR" \
     ONESHOT_RUN_ID="$RUN_ID" \
+    ONESHOT_ARCHIVE_HANDLED=1 \
     "${DISABLE_GLOBAL_ENV[@]}" \
     "${ONESHOT_CMD[@]}")"
   ONESHOT_STATUS=$?
@@ -399,6 +440,7 @@ else
   set +e
   OUTPUT="$(ONESHOT_RUNS_DIR="$RUNS_DIR" \
     ONESHOT_RUN_ID="$RUN_ID" \
+    ONESHOT_ARCHIVE_HANDLED=1 \
     "${ONESHOT_CMD[@]}")"
   ONESHOT_STATUS=$?
   set -e

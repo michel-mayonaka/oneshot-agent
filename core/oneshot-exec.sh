@@ -49,10 +49,42 @@ RUN_ID="${ONESHOT_RUN_ID:-}"
 if [[ -z "$RUN_ID" ]]; then
   RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
 fi
-RUNS_DIR="${ONESHOT_RUNS_DIR:-$AGENT_ROOT/worklogs}"
+DEFAULT_RUNS_DIR="$AGENT_ROOT/worklogs/oneshot-exec"
+RUNS_DIR="${ONESHOT_RUNS_DIR:-$DEFAULT_RUNS_DIR}"
 RUN_DIR="$RUNS_DIR/$RUN_ID"
 mkdir -p "$RUN_DIR"
 mkdir -p "$RUN_DIR/logs" "$RUN_DIR/prompts" "$RUN_DIR/inputs"
+RUN_RUNNING_FILE="$RUN_DIR/.running"
+{
+  echo "pid=$$"
+  echo "started_at=$(date +%Y-%m-%dT%H:%M:%S%z)"
+} > "$RUN_RUNNING_FILE"
+cleanup_running() { rm -f "$RUN_RUNNING_FILE"; }
+trap cleanup_running EXIT
+
+# 旧runをアーカイブ（run-oneshot経由では無効化）
+if [[ -z "${ONESHOT_ARCHIVE_HANDLED:-}" ]]; then
+  ARCHIVE_DIR="$RUNS_DIR/archive"
+  mkdir -p "$ARCHIVE_DIR"
+  shopt -s nullglob
+  for d in "$RUNS_DIR"/*; do
+    [[ "$d" == "$ARCHIVE_DIR" ]] && continue
+    [[ "$d" == "$RUN_DIR" ]] && continue
+    [[ -d "$d" ]] || continue
+    [[ -f "$d/.running" ]] && continue
+    base="$(basename "$d")"
+    dest="$ARCHIVE_DIR/$base"
+    if [[ -e "$dest" ]]; then
+      ts="$(date +%Y%m%d-%H%M%S)"
+      dest="$ARCHIVE_DIR/$base.$ts"
+    fi
+    if [[ -e "$dest" ]]; then
+      dest="$ARCHIVE_DIR/$base.$RANDOM"
+    fi
+    mv "$d" "$dest"
+  done
+  shopt -u nullglob
+fi
 
 # ターゲットディレクトリ決定（デフォルトは worklogs/<run_id>/artifacts/）
 if [[ -z "$TARGET_DIR" ]]; then

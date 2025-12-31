@@ -4,10 +4,14 @@
 保証:
 - run_dir は `ONESHOT_RUNS_DIR` 配下に作成されます。
 - 省略時は `worklogs/` 配下になります。
+- oneshot-exec 単独実行の既定は `worklogs/oneshot-exec/` です。
 - `oneshot-exec.sh` は `logs/` を作成します。
 - `prompts/` と `inputs/` も作成します。
 - `-C` 省略時は `artifacts/` を作成します。
 - `run-oneshot.sh` は `worklogs/<spec>/<run_id>` を使います。
+- `worklogs/<spec>/` 直下は最新runと `archive/` です。
+- 旧runは `archive/` に移動します。
+- 実行中のrunは `.running` で判定します。
 仮定:
 - `ONESHOT_AGENT_ROOT` が設定済みです。
 理由:
