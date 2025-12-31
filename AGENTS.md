@@ -20,7 +20,7 @@
 
 ## 実行・開発コマンド
 - `bash core/oneshot-exec.sh "<prompt or path>"`  
-  文字列またはプロンプトファイルパスを渡して 1 回分のエージェント実行を行い、`worklogs/<spec>/<run_id>/artifacts/` に生成物を作りつつ、`worklogs/` にログを保存します。
+  文字列またはプロンプトファイルパスを渡して 1 回分のエージェント実行を行い、`worklogs/<run_id>/artifacts/` に生成物を作りつつ、`worklogs/` にログを保存します（`core/run-oneshot.sh` 経由は `worklogs/<spec>/<run_id>/`）。
 - `bash core/oneshot-exec.sh -C /path/to/project "<prompt or path>"`  
   既存プロジェクトディレクトリをカレントディレクトリとして Codex を実行します（ログは引き続きハーネス側の `worklogs/` に保存）。
 - `bash core/summarize_run.sh worklogs/<run_id>` / `bash core/summarize_run.sh worklogs/<spec>/<run_id>`  

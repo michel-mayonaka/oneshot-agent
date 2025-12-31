@@ -11,7 +11,7 @@ Codex CLI に「ワンショットで仕事を投げる」ための、シンプ�
 ## 使い方
 ### 1. 0→1 用（デフォルト）
 任意のプロンプト文字列、またはプロンプトファイルを渡して実行します。  
-生成物は `worklogs/<spec>/<run_id>/artifacts/` 配下に作られます。
+生成物は `worklogs/<run_id>/artifacts/` 配下に作られます。
 
 ```bash
 bash core/oneshot-exec.sh "Create a small CLI tool in Go"
@@ -19,7 +19,7 @@ bash core/oneshot-exec.sh "Create a small CLI tool in Go"
 bash core/oneshot-exec.sh -C /path/to/your-project "Refactor this repo to use tool X"
 ```
 
-各実行は一意な `run_id` を持ち、`worklogs/<spec>/<run_id>/` に以下のように保存されます:
+各実行は一意な `run_id` を持ち、`worklogs/<run_id>/` に以下のように保存されます:
 - `report.md`: 人間向けの実行レポート
 - `prompts/`: `prompt.raw.txt`, `prompt.txt`, `skills_used.txt`
 - `logs/`: `events.jsonl`, `worklog.md`, `worklog.commands.md`, `commands.jsonl`, `stderr_and_time.txt`, `usage.json`
@@ -75,7 +75,7 @@ spec は `specs/*.yml` に置き、プロンプトは `prompt_text` として sp
 - `ONESHOT_DISABLE_GLOBAL_SKILLS=1`: global skills を無効化。
 - `ONESHOT_AUTO_TRANSLATE_WORKLOG=1`: 実行後に `worklog.md` を日本語翻訳。
 - `ONESHOT_TRANSLATE_MODEL`: 翻訳用モデル指定（既定: `gpt-5.2`）。
-  - 注: 翻訳スクリプトは `worklogs/<spec>/<run_id>/worklog.md` を参照します（ログ本体は `worklogs/<spec>/<run_id>/logs/worklog.md` に出力されます）。
+  - 注: 翻訳スクリプトは `worklogs/<run_id>/worklog.md` を参照します（ログ本体は `worklogs/<run_id>/logs/worklog.md` に出力されます）。翻訳したい場合は、`logs/worklog.md` を `worklog.md` にコピーまたはシンボリックリンクしてください。
 
 ### Spec 仕様（概要）
 最小構成:
