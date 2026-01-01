@@ -12,6 +12,8 @@ Usage: $(basename "$0") [-C <target_dir>] [-s skill1,skill2] <prompt.txt or prom
 環境変数:
   ONESHOT_SKILLS                追加で読み込む optional skill 名（カンマ区切り）。
   ONESHOT_DISABLE_GLOBAL_SKILLS グローバルskills(global/)を無効化する場合に1を設定。
+  ONESHOT_MODEL                 Codex 実行モデル（未指定時は gpt-5.2-codex）。
+  ONESHOT_THINKING              reasoning.effort に渡す thinking レベル（例: low/medium/high）。
 EOF
 }
 
@@ -203,16 +205,21 @@ set -u
   echo "----- USER PROMPT END -----"
 } > "$FINAL_PROMPT_FILE"
 
+# Codex実行オプション
+MODEL="${ONESHOT_MODEL:-gpt-5.2-codex}"
+THINKING="${ONESHOT_THINKING:-}"
+# bash 3.2 + set -u では空配列展開がエラーになるため、コマンド配列で組み立てる
+CODEX_CMD=(codex exec --skip-git-repo-check --full-auto --model "$MODEL")
+if [[ -n "$THINKING" ]]; then
+  CODEX_CMD+=( -c "reasoning.effort=\"${THINKING}\"" )
+fi
+CODEX_CMD+=( --json - )
+
 # JSONLをこのrun専用に保存（混ざらない）
 {
   pushd "$TARGET_DIR" >/dev/null
   /usr/bin/time -p \
-  codex exec \
-    --skip-git-repo-check \
-    --full-auto \
-    --model gpt-5.2-codex \
-    --json \
-    - < "$FINAL_PROMPT_FILE" \
+  "${CODEX_CMD[@]}" < "$FINAL_PROMPT_FILE" \
   | tee "$RUN_DIR/logs/events.jsonl" >/dev/null
   popd >/dev/null
 } 2> "$RUN_DIR/logs/stderr_and_time.txt"
