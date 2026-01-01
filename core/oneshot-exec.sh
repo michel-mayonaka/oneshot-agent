@@ -144,9 +144,16 @@ if [[ -d "$OPTIONAL_SKILLS_DIR" ]]; then
   set +u
   if [[ ${#OPTIONAL_SKILL_NAMES[@]} -gt 0 ]]; then
     for __name in "${OPTIONAL_SKILL_NAMES[@]}"; do
-      __file="$OPTIONAL_SKILLS_DIR/${__name}.md"
-      if [[ -f "$__file" ]]; then
-        OPTIONAL_SKILL_FILES+=("$__file")
+      __file_md="$OPTIONAL_SKILLS_DIR/${__name}.md"
+      __dir="$OPTIONAL_SKILLS_DIR/${__name}"
+      __file_dir="$__dir/SKILL.md"
+      if [[ -f "$__file_dir" ]]; then
+        OPTIONAL_SKILL_FILES+=("$__file_dir")
+        if [[ -f "$__file_md" ]]; then
+          echo "WARN: optional skill has both dir and md; using dir: ${__name}" >&2
+        fi
+      elif [[ -f "$__file_md" ]]; then
+        OPTIONAL_SKILL_FILES+=("$__file_md")
       else
         echo "WARN: optional skill not found: ${__name}" >&2
       fi
