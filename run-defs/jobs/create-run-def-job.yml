@@ -17,11 +17,10 @@ prompt_text: |
   - `prompt_text` と `prompt_file` は排他的にする。
   - 入力が必要なら `__INPUT_<KEY>__` を本文に埋め、`--input key=path` で渡す前提にする（KEYは大文字化）。
   - `worklogs/` には変更を加えない。
-
-  参考:
-  - skills/optional/create-run-def-job.md と references/templates.md を参照して進める。
 skills:
-  - create-run-def-job
+  - skills/optional/create-run-def-job/SKILL.md
+  - skills/optional/pr-draft.md
+  - skills/optional/create-run-def-job/references/templates.md
 worktree: true
 pr: true
 model: gpt-5.2-codex

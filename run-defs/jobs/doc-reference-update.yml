@@ -3,12 +3,18 @@ prompt_text: |
   目的:
   - 現状の実装内容を根拠に、docs/reference/ にドキュメントを生成・更新する。
 
+  追加方針:
+  - docs/reference/core/ と docs/reference/run-defs/ のディレクトリを新規追加する。
+  - 上記ディレクトリ配下に、対応する実装ディレクトリ（core/, run-defs/）の内容をリファレンス化したドキュメントを作成する。
+
   要件:
   - 変更対象は docs/reference/ 配下のドキュメントのみ（必要なら新規作成可）。コードの挙動変更はしない。
   - 実装の根拠となるファイルパスを明記し、不確かな点は「要確認」とする。
   - 重要な仕様 / 入出力 / 設定 / CLI / 環境変数があれば反映する。
   - worklogs/ には変更を加えない。
   - 最後に変更内容のサマリ（変更ファイル一覧 / 要確認事項）をMarkdownでまとめる。
+skills:
+  - skills/optional/pr-draft.md
 worktree: true
 pr: true
 model: gpt-5.2-codex

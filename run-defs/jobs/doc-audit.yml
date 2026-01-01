@@ -20,7 +20,7 @@ prompt_text: |
   - 断定が難しい場合は「要確認」と明記すること。
   - 依頼内容の確認や質問はせず、レポート本文から書き始めること。
 skills:
-  - doc-audit
+  - skills/optional/doc-audit.md
 worktree: false
 model: gpt-5.2-codex
 thinking: medium

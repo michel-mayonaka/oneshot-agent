@@ -19,7 +19,7 @@ prompt_text: |
   ドキュメント監査を実施してください。不整合の洗い出しだけを行い、修正はしないでください。
   必須出力: Markdown レポート（概要 / 調査プロセス / 不整合一覧 / 根拠詳細）。
 skills:
-  - doc-audit
+  - skills/optional/doc-audit.md
 worktree: false
 ```
 
@@ -88,3 +88,7 @@ pr: true
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" \
 		bash core/run-oneshot.sh --job $(<TARGET>_SPEC) --input input=$(<TARGET>_INPUT)
 ```
+
+# Notes
+
+- `skills:` には **参照したいファイルをすべて列挙** する（本文内で参照があっても省略しない）。

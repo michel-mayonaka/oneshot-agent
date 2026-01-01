@@ -11,6 +11,7 @@ YAML job spec (flat):
   prompt_text: "..."
   skills:
     - doc-audit
+    # or file paths: skills/optional/doc-audit.md
   target_dir: /path/to/project
   worktree: true
   pr: true
@@ -115,6 +116,7 @@ DISABLE_GLOBAL=""
 MODEL=""
 THINKING=""
 SKILLS=()
+SKILL_FILES=()
 INPUT_KEYS=()
 INPUT_VALS=()
 IN_SKILLS_BLOCK=0
@@ -152,7 +154,13 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   if [[ $IN_SKILLS_BLOCK -eq 1 ]]; then
     if [[ "$line" == -* ]]; then
       skill="$(trim "${line#-}")"
-      [[ -n "$skill" ]] && SKILLS+=("$skill")
+      if [[ -n "$skill" ]]; then
+        if [[ "$skill" == *"/"* || "$skill" == *.md ]]; then
+          SKILL_FILES+=("$skill")
+        else
+          SKILLS+=("$skill")
+        fi
+      fi
       continue
     else
       IN_SKILLS_BLOCK=0
@@ -229,6 +237,16 @@ if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
       break
     fi
   done
+  if [[ $already -eq 0 ]]; then
+    for f in "${SKILL_FILES[@]:-}"; do
+      base="$(basename "$f")"
+      dir_base="$(basename "$(dirname "$f")")"
+      if [[ "$base" == "pr-draft.md" || ( "$base" == "SKILL.md" && "$dir_base" == "pr-draft" ) ]]; then
+        already=1
+        break
+      fi
+    done
+  fi
   if [[ $already -eq 0 ]]; then
     SKILLS+=("pr-draft")
   fi
@@ -377,6 +395,39 @@ prompt_path.write_text(text.replace(placeholder, content))
 PY
   done
   PROMPT_PATH="$PROMPT_TMP"
+fi
+
+# job spec で指定された skill file をプロンプト先頭に展開
+if [[ ${#SKILL_FILES[@]} -gt 0 ]]; then
+  SKILL_PROMPT="$TMP_DIR/prompt.with-skill-files.txt"
+  {
+    echo "# Job Skill Files"
+    for entry in "${SKILL_FILES[@]}"; do
+      resolved=""
+      if [[ "$entry" = /* ]]; then
+        resolved="$entry"
+      elif [[ -n "${AGENT_ROOT:-}" && -f "$AGENT_ROOT/$entry" ]]; then
+        resolved="$AGENT_ROOT/$entry"
+      elif [[ -f "$JOB_SPEC_DIR/$entry" ]]; then
+        resolved="$JOB_SPEC_DIR/$entry"
+      fi
+      if [[ -z "$resolved" || ! -f "$resolved" ]]; then
+        echo "Skill file not found: $entry" >&2
+        exit 1
+      fi
+      display="$resolved"
+      if [[ -n "${AGENT_ROOT:-}" && "$resolved" == "$AGENT_ROOT/"* ]]; then
+        display="${resolved#"$AGENT_ROOT/"}"
+      fi
+      echo ""
+      echo "## skill_file: $display"
+      echo ""
+      cat "$resolved"
+    done
+    echo ""
+    cat "$PROMPT_PATH"
+  } > "$SKILL_PROMPT"
+  PROMPT_PATH="$SKILL_PROMPT"
 fi
 
 # レンダリングのみ（置換結果の出力）

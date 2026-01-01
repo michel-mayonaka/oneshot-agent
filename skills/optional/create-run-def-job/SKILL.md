@@ -30,6 +30,7 @@ description: Create or update run-defs job specs and matching Makefile targets i
 - worktree/pr の既定は「使う必要があるときだけ true」。  
 - 迷う場合は `references/templates.md` のテンプレートをベースにする。
 - `make create-run-def-job <free-text...>` のように引数で依頼文を渡す形式も許可する（空白区切り語を1行テキストとして扱う）。
+- `skills:` には skill 名だけでなく、参照したいファイルパス（例: `skills/optional/create-run-def-job/SKILL.md`）を列挙できる。
 
 # References
 
