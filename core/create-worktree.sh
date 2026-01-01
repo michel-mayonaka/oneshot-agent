@@ -3,12 +3,12 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: create-worktree.sh --repo <repo_dir> --run-id <id> --spec-name <name> [--base <branch>] [--worktree-root <dir>] [--worklogs-root <dir>]
+Usage: create-worktree.sh --repo <repo_dir> --run-id <id> --job-name <name> [--base <branch>] [--worktree-root <dir>] [--worklogs-root <dir>]
 
 Options:
   --repo          Gitリポジトリのルートパス
   --run-id        run_id（例: 20250101-010203-12345）
-  --spec-name     spec名（yml名など）
+  --job-name      job名（yml名など）
   --base          ベースブランチ（省略時は現在のブランチ）
   --worktree-root worktree作成先のルート（省略時は <repo_dir>/worklogs）
   --worklogs-root 互換用（worktree-rootの別名）
@@ -17,7 +17,7 @@ USAGE
 
 REPO_DIR=""
 RUN_ID=""
-SPEC_NAME=""
+JOB_NAME=""
 BASE_BRANCH=""
 WORKTREE_ROOT=""
 WORKLOGS_ROOT=""
@@ -32,8 +32,8 @@ while [[ $# -gt 0 ]]; do
       RUN_ID="$2"
       shift 2
       ;;
-    --spec-name)
-      SPEC_NAME="$2"
+    --job-name)
+      JOB_NAME="$2"
       shift 2
       ;;
     --base)
@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$REPO_DIR" || -z "$RUN_ID" || -z "$SPEC_NAME" ]]; then
+if [[ -z "$REPO_DIR" || -z "$RUN_ID" || -z "$JOB_NAME" ]]; then
   usage
   exit 1
 fi
@@ -95,11 +95,11 @@ if [[ -z "$BASE_BRANCH" ]]; then
   fi
 fi
 
-SAFE_SPEC="$(sanitize_branch "$SPEC_NAME")"
-if [[ -z "$SAFE_SPEC" ]]; then
-  SAFE_SPEC="spec"
+SAFE_JOB="$(sanitize_branch "$JOB_NAME")"
+if [[ -z "$SAFE_JOB" ]]; then
+  SAFE_JOB="job"
 fi
-BRANCH_NAME="${SAFE_SPEC}-${RUN_ID}"
+BRANCH_NAME="${SAFE_JOB}-${RUN_ID}"
 
 if git -C "$REPO_DIR" show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
   echo "Branch already exists: $BRANCH_NAME" >&2

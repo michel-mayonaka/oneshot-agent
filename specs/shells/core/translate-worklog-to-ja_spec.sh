@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellspec
 
-Include spec/spec_helper.sh
+Include specs/shells/spec_helper.sh
 
 Describe "core/translate-worklog-to-ja.sh"
   BeforeEach setup_tmp

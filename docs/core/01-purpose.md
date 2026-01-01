@@ -22,8 +22,8 @@
 
 # 用語集
 - run_id: 1回の実行を識別するID。
-- run_dir: `worklogs/<spec>/<run_id>` 配下。
-- spec: `specs/*.yml` の実行定義。
+- run_dir: `worklogs/<job>/<run_id>` 配下。
+- job: `run-defs/jobs/*.yml` の実行定義。
 - oneshot-exec: 単独実行の格納先名。
 - worktree: Git の作業コピー。
 - prompt.raw.txt: ユーザ入力の原文。

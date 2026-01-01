@@ -3,9 +3,9 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: run-oneshot.sh --spec <spec.yml> [--audit-report <file>] [--input <key=path>] [--render-only]
+Usage: run-oneshot.sh --job <job.yml> [--audit-report <file>] [--input <key=path>] [--render-only]
 
-YAML spec (flat):
+YAML job spec (flat):
   name: doc-audit
   prompt_file: prompts/doc-audit.md
   prompt_text: "..."
@@ -17,24 +17,28 @@ YAML spec (flat):
   pr_yml: true
   pr_draft: true
   disable_global_skills: true
+  model: gpt-5.2-codex
+  thinking: medium
 
 Notes:
 - prompt_file と prompt_text はどちらか一方を指定。
 - target_dir 未指定時は ONESHOT_PROJECT_ROOT -> PROJECT_ROOT -> PWD の順で使用。
 - inputs は __INPUT_<KEY>__ に置換される（KEYは大文字化）。
 - --input のパスは ONESHOT_AGENT_ROOT からの相対パスとして解決される。
-- pr_yml は worktree: true が前提（worklogs/<spec>/<run_id>/worktree を参照）。
+- pr_yml は worktree: true が前提（worklogs/<job>/<run_id>/worktree を参照）。
+- thinking は Codex CLI の reasoning.effort に渡される。
+- ONESHOT_WORKLOGS_ROOT が指定されている場合、worklogs のルートとして使われます。
 USAGE
 }
 
-SPEC=""
+JOB_SPEC=""
 AUDIT_REPORT_SRC=""
 RENDER_ONLY=0
 INPUT_OVERRIDES=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --spec)
-      SPEC="$2"
+    --job)
+      JOB_SPEC="$2"
       shift 2
       ;;
     --audit-report)
@@ -62,18 +66,18 @@ while [[ $# -gt 0 ]]; do
   done
 
 # 必須引数の検証
-if [[ -z "$SPEC" ]]; then
+if [[ -z "$JOB_SPEC" ]]; then
   usage
   exit 1
 fi
 
-if [[ ! -f "$SPEC" ]]; then
-  echo "Spec not found: $SPEC" >&2
+if [[ ! -f "$JOB_SPEC" ]]; then
+  echo "Job spec not found: $JOB_SPEC" >&2
   exit 1
 fi
 
-# spec パス起点の解決用ディレクトリ
-SPEC_DIR="$(cd "$(dirname "$SPEC")" && pwd)"
+# job spec パス起点の解決用ディレクトリ
+JOB_SPEC_DIR="$(cd "$(dirname "$JOB_SPEC")" && pwd)"
 
 # 文字列前後の空白を削る
 trim() {
@@ -98,7 +102,7 @@ set_input() {
   INPUT_VALS+=("$v")
 }
 
-# spec から読み取る設定値
+# job spec から読み取る設定値
 NAME=""
 PROMPT_FILE=""
 PROMPT_TEXT=""
@@ -108,6 +112,8 @@ PR_ENABLED=""
 PR_YML=""
 PR_DRAFT=""
 DISABLE_GLOBAL=""
+MODEL=""
+THINKING=""
 SKILLS=()
 INPUT_KEYS=()
 INPUT_VALS=()
@@ -115,7 +121,7 @@ IN_SKILLS_BLOCK=0
 IN_PROMPT_TEXT_BLOCK=0
 PROMPT_TEXT_INDENT=""
 
-# spec を最小限パース（フラット YAML）
+# job spec を最小限パース（フラット YAML）
 while IFS= read -r line || [[ -n "$line" ]]; do
   # strip comments
   line="${line%%#*}"
@@ -173,15 +179,17 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       pr_yml) PR_YML="$val" ;;
       pr_draft) PR_DRAFT="$val" ;;
       disable_global_skills) DISABLE_GLOBAL="$val" ;;
+      model) MODEL="$val" ;;
+      thinking|thinking_level) THINKING="$val" ;;
       *) : ;;
     esac
   fi
 
-  done < "$SPEC"
+  done < "$JOB_SPEC"
 
 # name が無い場合はファイル名から推定
 if [[ -z "$NAME" ]]; then
-  base="$(basename "$SPEC")"
+  base="$(basename "$JOB_SPEC")"
   NAME="${base%.*}"
 fi
 
@@ -240,7 +248,8 @@ fi
 
 # run_id とログ先を確定（早めにログを開始）
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$RANDOM"
-RUNS_DIR="$AGENT_ROOT/worklogs/$NAME"
+WORKLOGS_ROOT="${ONESHOT_WORKLOGS_ROOT:-$AGENT_ROOT/worklogs}"
+RUNS_DIR="$WORKLOGS_ROOT/$NAME"
 mkdir -p "$RUNS_DIR"
 RUN_DIR_PREP="$RUNS_DIR/$RUN_ID"
 mkdir -p "$RUN_DIR_PREP/logs"
@@ -252,7 +261,7 @@ RUN_RUNNING_FILE="$RUN_DIR_PREP/.running"
 RUN_ONESHOT_LOG="$RUN_DIR_PREP/logs/run-oneshot.log"
 {
   echo "run_id=$RUN_ID"
-  echo "spec=$SPEC"
+  echo "job_spec=$JOB_SPEC"
   echo "name=$NAME"
   echo "timestamp=$(date +%Y-%m-%dT%H:%M:%S%z)"
 } >> "$RUN_ONESHOT_LOG"
@@ -393,7 +402,7 @@ if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
   WORKTREE_OUTPUT="$("$WORKTREE_SCRIPT" \
     --repo "$TARGET_DIR" \
     --run-id "$RUN_ID" \
-    --spec-name "$NAME" \
+    --job-name "$NAME" \
     --worktree-root "$RUNS_DIR")"
   emit "$WORKTREE_OUTPUT"
 
@@ -427,24 +436,30 @@ if [[ "$DISABLE_GLOBAL" == "true" || "$DISABLE_GLOBAL" == "1" ]]; then
 fi
 
 # oneshot 本体実行（失敗時の出力をログへ）
+EXTRA_ENV=()
 if [[ ${#DISABLE_GLOBAL_ENV[@]} -gt 0 ]]; then
-  set +e
-  OUTPUT="$(ONESHOT_RUNS_DIR="$RUNS_DIR" \
-    ONESHOT_RUN_ID="$RUN_ID" \
-    ONESHOT_ARCHIVE_HANDLED=1 \
-    "${DISABLE_GLOBAL_ENV[@]}" \
-    "${ONESHOT_CMD[@]}")"
-  ONESHOT_STATUS=$?
-  set -e
-else
-  set +e
-  OUTPUT="$(ONESHOT_RUNS_DIR="$RUNS_DIR" \
-    ONESHOT_RUN_ID="$RUN_ID" \
-    ONESHOT_ARCHIVE_HANDLED=1 \
-    "${ONESHOT_CMD[@]}")"
-  ONESHOT_STATUS=$?
-  set -e
+  EXTRA_ENV+=( "${DISABLE_GLOBAL_ENV[@]}" )
 fi
+if [[ -n "$MODEL" ]]; then
+  EXTRA_ENV+=( ONESHOT_MODEL="$MODEL" )
+fi
+if [[ -n "$THINKING" ]]; then
+  EXTRA_ENV+=( ONESHOT_THINKING="$THINKING" )
+fi
+BASE_ENV=(
+  ONESHOT_RUNS_DIR="$RUNS_DIR"
+  ONESHOT_RUN_ID="$RUN_ID"
+  ONESHOT_ARCHIVE_HANDLED=1
+)
+
+CMD_ENV=( "${BASE_ENV[@]}" )
+if [[ ${#EXTRA_ENV[@]} -gt 0 ]]; then
+  CMD_ENV+=( "${EXTRA_ENV[@]}" )
+fi
+set +e
+OUTPUT="$(env "${CMD_ENV[@]}" "${ONESHOT_CMD[@]}")"
+ONESHOT_STATUS=$?
+set -e
 
 emit "$OUTPUT"
 if [[ ${ONESHOT_STATUS:-0} -ne 0 ]]; then

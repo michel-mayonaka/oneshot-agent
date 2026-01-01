@@ -8,8 +8,8 @@
 - `oneshot-exec.sh` は `logs/` を作成します。
 - `prompts/` と `inputs/` も作成します。
 - `-C` 省略時は `artifacts/` を作成します。
-- `run-oneshot.sh` は `worklogs/<spec>/<run_id>` を使います。
-- `worklogs/<spec>/` 直下は最新runと `archive/` です。
+- `run-oneshot.sh` は `worklogs/<job>/<run_id>` を使います。
+- `worklogs/<job>/` 直下は最新runと `archive/` です。
 - 旧runは `archive/` に移動します。
 - 実行中のrunは `.running` で判定します。
 仮定:
@@ -21,7 +21,7 @@
 安全な変更手順:
 - 変更理由を ADR に記録します。
 - 生成先の互換層を用意し、移行期間を設けます。
-- `spec/` のテストを更新します。
+- `specs/shells/` のテストを更新します。
 
 ## I-02 入力置換契約: __INPUT_<KEY>__
 保証:

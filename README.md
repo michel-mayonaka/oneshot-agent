@@ -5,7 +5,7 @@ Codex CLI を1回実行し、ログと成果物を残すハーネスです。
 
 ## できること
 - 単一プロンプト実行とログ保存。
-- spec YAML による実行の定型化。
+- job YAML による実行の定型化。
 - worktree を使った安全な作業ディレクトリ。
 - 実行サマリーレポートの生成。
 - PR下書きやPR作成の補助（要 gh）。
@@ -25,11 +25,11 @@ export ONESHOT_AGENT_ROOT="$(pwd)"
 bash core/oneshot-exec.sh "List files and summarize"
 ```
 
-spec 実行の最小例です。
+job 実行の最小例です。
 
 ```bash
 export ONESHOT_AGENT_ROOT="$(pwd)"
-bash core/run-oneshot.sh --spec specs/doc-audit.yml
+bash core/run-oneshot.sh --job run-defs/jobs/doc-audit.yml
 ```
 
 生成物は `worklogs/` 配下に保存されます。
