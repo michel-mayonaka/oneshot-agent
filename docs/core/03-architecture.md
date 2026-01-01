@@ -5,11 +5,11 @@
 [Prompt/Job/Skills/Inputs]
         |
         v
-  run-oneshot.sh
+  run_oneshot.sh
         |
   (worktree作成: 任意)
         |
-     oneshot-exec.sh
+     oneshot_exec.sh
         |
      codex exec
         |
@@ -21,18 +21,18 @@
 ```
 
 ## 主要コンポーネント
-- `core/oneshot-exec.sh`: 単発実行とログ作成。
-- `core/run-oneshot.sh`: job spec 解釈と実行統合。
+- `core/oneshot_exec.sh`: 単発実行とログ作成。
+- `core/run_oneshot.sh`: job spec 解釈と実行統合。
 - `core/summarize_run.sh`: レポート生成。
-- `core/create-worktree.sh`: worktree 作成。
-- `core/remove-worktree.sh`: worktree 削除。
-- `core/generate-pr-yml.sh`: PR下書き生成。
-- `core/create-pr.sh`: PR作成（要 gh）。
-- `core/translate-worklog-to-ja.sh`: ログ翻訳。
+- `core/create_worktree.sh`: worktree 作成。
+- `core/remove_worktree.sh`: worktree 削除。
+- `core/generate_pr_yml.sh`: PR下書き生成。
+- `core/create_pr.sh`: PR作成（要 gh）。
+- `core/translate_worklog_to_ja.sh`: ログ翻訳。
 
 ## ディレクトリ責務マップ
 - `core/`: 実行・集計のスクリプト群。
-- `run-defs/jobs/`: run-oneshot 用 YAML 定義。
+- `run-defs/jobs/`: run_oneshot 用 YAML 定義。
 - `run-defs/modes/`: Codex 起動時に読ませる情報のバンドル定義（予定）。
 - `skills/global/`: 常時前置するガイド。
 - `skills/optional/`: 任意で読み込むガイド。

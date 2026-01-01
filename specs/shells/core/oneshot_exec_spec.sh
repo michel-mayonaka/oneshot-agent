@@ -3,18 +3,18 @@
 
 Include specs/shells/spec_helper.sh
 
-Describe "core/oneshot-exec.sh"
+Describe "core/oneshot_exec.sh"
   BeforeEach setup_tmp
   AfterEach cleanup_tmp
 
   It "fails when prompt missing"
-    When run bash core/oneshot-exec.sh
+    When run bash core/oneshot_exec.sh
     The status should be failure
     The output should include "Usage:"
   End
 
   It "fails when ONESHOT_AGENT_ROOT missing"
-    When run env -u ONESHOT_AGENT_ROOT bash core/oneshot-exec.sh "hi"
+    When run env -u ONESHOT_AGENT_ROOT bash core/oneshot_exec.sh "hi"
     The status should be failure
     The stderr should include "ONESHOT_AGENT_ROOT is not set"
   End
@@ -32,7 +32,7 @@ Describe "core/oneshot-exec.sh"
       ONESHOT_RUNS_DIR="$RUNS" \
       ONESHOT_RUN_ID="run-1" \
       ONESHOT_AUTO_TRANSLATE_WORKLOG="" \
-      bash core/oneshot-exec.sh -s foo "hello"
+      bash core/oneshot_exec.sh -s foo "hello"
 
     The status should be success
     The output should include "run_dir=$RUNS/run-1"

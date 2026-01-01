@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: run-oneshot.sh --job <job.yml> [--audit-report <file>] [--input <key=path>] [--render-only]
+Usage: run_oneshot.sh --job <job.yml> [--audit-report <file>] [--input <key=path>] [--render-only]
 
 YAML job spec (flat):
   name: doc-audit
@@ -257,10 +257,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${ONESHOT_AGENT_ROOT:?ONESHOT_AGENT_ROOT is not set}"
 AGENT_ROOT="$ONESHOT_AGENT_ROOT"
 ROOT_DIR="$AGENT_ROOT"
-ONESHOT="$AGENT_ROOT/core/oneshot-exec.sh"
+ONESHOT="$AGENT_ROOT/core/oneshot_exec.sh"
 
 if [[ ! -x "$ONESHOT" ]]; then
-  echo "oneshot-exec.sh not found: $ONESHOT" >&2
+  echo "oneshot_exec.sh not found: $ONESHOT" >&2
   exit 1
 fi
 
@@ -444,9 +444,9 @@ WORKTREE_BRANCH=""
 WORKTREE_BASE=""
 # worktree を作成してターゲットを差し替え
 if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
-  WORKTREE_SCRIPT="$ROOT_DIR/core/create-worktree.sh"
+  WORKTREE_SCRIPT="$ROOT_DIR/core/create_worktree.sh"
   if [[ ! -x "$WORKTREE_SCRIPT" ]]; then
-    echo "create-worktree.sh not found: $WORKTREE_SCRIPT" >&2
+    echo "create_worktree.sh not found: $WORKTREE_SCRIPT" >&2
     exit 1
   fi
 
@@ -517,7 +517,7 @@ if [[ ${ONESHOT_STATUS:-0} -ne 0 ]]; then
   emit "oneshot_exit_code=$ONESHOT_STATUS"
   exit "$ONESHOT_STATUS"
 fi
-# run-oneshot の補助出力
+# run_oneshot の補助出力
 if [[ -n "$WORKTREE_DIR" ]]; then
   emit "worktree_dir=$WORKTREE_DIR"
   if [[ -n "$WORKTREE_BRANCH" ]]; then
@@ -545,9 +545,9 @@ if [[ "$PR_YML" == "true" || "$PR_YML" == "1" ]]; then
     echo "pr_yml requires worktree: true" >&2
     exit 1
   fi
-  PR_YML_SCRIPT="$ROOT_DIR/core/generate-pr-yml.sh"
+  PR_YML_SCRIPT="$ROOT_DIR/core/generate_pr_yml.sh"
   if [[ ! -x "$PR_YML_SCRIPT" ]]; then
-    echo "generate-pr-yml.sh not found: $PR_YML_SCRIPT" >&2
+    echo "generate_pr_yml.sh not found: $PR_YML_SCRIPT" >&2
     exit 1
   fi
   PR_YML_OUTPUT="$("$PR_YML_SCRIPT" "$RUN_DIR")"
@@ -566,18 +566,18 @@ if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
   fi
   PR_YML_PATH="$RUN_DIR/pr.yml"
   if [[ ! -f "$PR_YML_PATH" ]]; then
-    PR_YML_SCRIPT="$ROOT_DIR/core/generate-pr-yml.sh"
+    PR_YML_SCRIPT="$ROOT_DIR/core/generate_pr_yml.sh"
     if [[ ! -x "$PR_YML_SCRIPT" ]]; then
-      echo "generate-pr-yml.sh not found: $PR_YML_SCRIPT" >&2
+      echo "generate_pr_yml.sh not found: $PR_YML_SCRIPT" >&2
       exit 1
     fi
     PR_YML_OUTPUT="$("$PR_YML_SCRIPT" "$RUN_DIR")"
     emit "$PR_YML_OUTPUT"
   fi
 
-  PR_SCRIPT="$ROOT_DIR/core/create-pr.sh"
+  PR_SCRIPT="$ROOT_DIR/core/create_pr.sh"
   if [[ ! -x "$PR_SCRIPT" ]]; then
-    echo "create-pr.sh not found: $PR_SCRIPT" >&2
+    echo "create_pr.sh not found: $PR_SCRIPT" >&2
     exit 1
   fi
 

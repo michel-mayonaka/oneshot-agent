@@ -20,10 +20,11 @@
 - 確認コマンドをPR本文に残します。
 
 ## コーディング規約
-- スクリプトは `bash` と `set -euo pipefail`。
+- 詳細は `docs/core/06-coding-and-naming.md` を参照してください。
+- スクリプトは `bash` + `set -euo pipefail`、ファイル名は snake_case。
+- ディレクトリ名は kebab-case、ファイル名は原則 kebab-case（`docs/core` は `NN-title.md`）。
 - 変数名と関数名はスネークケース。
-- パス解決は `ONESHOT_AGENT_ROOT` 基準。
-- `../` 参照は使いません。
+- パス解決は `ONESHOT_AGENT_ROOT` 基準。`../` 参照は使いません。
 
 ## レビュー観点
 - 不変条件（docs/core/02-invariants.md）に抵触しないか。

@@ -3,14 +3,14 @@
 
 Include specs/shells/spec_helper.sh
 
-Describe "core/run-oneshot.sh"
+Describe "core/run_oneshot.sh"
   BeforeEach setup_tmp
   AfterEach cleanup_tmp
 
   It "fails when --job missing"
-    When run bash core/run-oneshot.sh
+    When run bash core/run_oneshot.sh
     The status should be failure
-    The output should include "Usage: run-oneshot.sh"
+    The output should include "Usage: run_oneshot.sh"
   End
 
   It "fails when prompt_file and prompt_text are both set"
@@ -20,7 +20,7 @@ name: test
 prompt_file: prompts/a.md
 prompt_text: "hello"
 YAML
-    When run env ONESHOT_AGENT_ROOT="$TMP_DIR/agent" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run-oneshot.sh --job "$JOB"
+    When run env ONESHOT_AGENT_ROOT="$TMP_DIR/agent" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be failure
     The stderr should include "Specify only one of prompt_file or prompt_text"
   End
@@ -28,8 +28,8 @@ YAML
   It "renders prompt with input replacement"
     AGENT="$TMP_DIR/agent"
     mkdir -p "$AGENT/core"
-    printf '#!/usr/bin/env bash\nexit 0\n' > "$AGENT/core/oneshot-exec.sh"
-    chmod +x "$AGENT/core/oneshot-exec.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$AGENT/core/oneshot_exec.sh"
+    chmod +x "$AGENT/core/oneshot_exec.sh"
     INPUT_PATH="$AGENT/input.txt"
     printf 'world' > "$INPUT_PATH"
 
@@ -40,7 +40,7 @@ prompt_text: |
   Hello __INPUT_FOO__
 YAML
 
-    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run-oneshot.sh --job "$JOB" --input foo=input.txt --render-only
+    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB" --input foo=input.txt --render-only
     The status should be success
     The output should include "run_oneshot_log="
     LOG_PATH="$(ls "$TMP_DIR/test-worklogs/test"/*/logs/run-oneshot.log 2>/dev/null | head -n 1)"
@@ -52,8 +52,8 @@ YAML
     AGENT="$TMP_DIR/agent"
     mkdir -p "$AGENT/core" "$AGENT/worklogs"
 
-    # mock oneshot-exec.sh
-    cat <<'MOCK' > "$AGENT/core/oneshot-exec.sh"
+    # mock oneshot_exec.sh
+    cat <<'MOCK' > "$AGENT/core/oneshot_exec.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -64,10 +64,10 @@ mkdir -p "$RUN_DIR/inputs" "$RUN_DIR/logs" "$RUN_DIR/prompts"
 
 echo "run_dir=$RUN_DIR"
 MOCK
-    chmod +x "$AGENT/core/oneshot-exec.sh"
+    chmod +x "$AGENT/core/oneshot_exec.sh"
 
-    # mock create-worktree.sh
-    cat <<'MOCK' > "$AGENT/core/create-worktree.sh"
+    # mock create_worktree.sh
+    cat <<'MOCK' > "$AGENT/core/create_worktree.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -103,10 +103,10 @@ echo "worktree_dir=$WORKTREE_DIR"
 echo "branch=test-branch"
 echo "base_branch=main"
 MOCK
-    chmod +x "$AGENT/core/create-worktree.sh"
+    chmod +x "$AGENT/core/create_worktree.sh"
 
-    # mock generate-pr-yml.sh
-    cat <<'MOCK' > "$AGENT/core/generate-pr-yml.sh"
+    # mock generate_pr_yml.sh
+    cat <<'MOCK' > "$AGENT/core/generate_pr_yml.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -130,7 +130,7 @@ YAML
 
 echo "generated: $RUN_DIR/pr.yml"
 MOCK
-    chmod +x "$AGENT/core/generate-pr-yml.sh"
+    chmod +x "$AGENT/core/generate_pr_yml.sh"
 
     JOB="$TMP_DIR/job.yml"
     cat <<'YAML' > "$JOB"
@@ -141,24 +141,24 @@ pr_yml: true
 target_dir: /tmp/target
 YAML
 
-    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run-oneshot.sh --job "$JOB"
+    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be success
     The output should include "worktree_dir="
     The output should include "generated:"
   End
 
-  It "passes model and thinking to oneshot-exec"
+  It "passes model and thinking to oneshot_exec"
     AGENT="$TMP_DIR/agent"
     mkdir -p "$AGENT/core"
 
-    cat <<'MOCK' > "$AGENT/core/oneshot-exec.sh"
+    cat <<'MOCK' > "$AGENT/core/oneshot_exec.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 
 echo "model=$ONESHOT_MODEL"
 echo "thinking=$ONESHOT_THINKING"
 MOCK
-    chmod +x "$AGENT/core/oneshot-exec.sh"
+    chmod +x "$AGENT/core/oneshot_exec.sh"
 
     JOB="$TMP_DIR/job.yml"
     cat <<'YAML' > "$JOB"
@@ -169,7 +169,7 @@ thinking: high
 worktree: false
 YAML
 
-    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run-oneshot.sh --job "$JOB"
+    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be success
     The output should include "model=gpt-5.2-codex"
     The output should include "thinking=high"

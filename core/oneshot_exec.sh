@@ -64,7 +64,7 @@ RUN_RUNNING_FILE="$RUN_DIR/.running"
 cleanup_running() { rm -f "$RUN_RUNNING_FILE"; }
 trap cleanup_running EXIT
 
-# 旧runをアーカイブ（run-oneshot経由では無効化）
+# 旧runをアーカイブ（run_oneshot経由では無効化）
 if [[ -z "${ONESHOT_ARCHIVE_HANDLED:-}" ]]; then
   ARCHIVE_DIR="$RUNS_DIR/archive"
   mkdir -p "$ARCHIVE_DIR"
@@ -267,7 +267,7 @@ echo "target_dir=$TARGET_DIR"
 
 # オプション: 作業ログを自動的に日本語化する
 if [[ -n "${ONESHOT_AUTO_TRANSLATE_WORKLOG:-}" ]]; then
-  if ! "$SCRIPT_DIR/translate-worklog-to-ja.sh" "$RUN_DIR"; then
+  if ! "$SCRIPT_DIR/translate_worklog_to_ja.sh" "$RUN_DIR"; then
     echo "WARN: failed to translate worklog to Japanese" >&2
   fi
 fi

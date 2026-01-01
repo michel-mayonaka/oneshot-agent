@@ -3,18 +3,18 @@
 
 Include specs/shells/spec_helper.sh
 
-Describe "core/create-worktree.sh"
+Describe "core/create_worktree.sh"
   BeforeEach setup_tmp
   AfterEach cleanup_tmp
 
   It "fails when required args are missing"
-    When run bash core/create-worktree.sh
+    When run bash core/create_worktree.sh
     The status should be failure
-    The output should include "Usage: create-worktree.sh"
+    The output should include "Usage: create_worktree.sh"
   End
 
   It "fails when repo is not git"
-    When run env GIT_MOCK_GIT_DIR_STATUS=1 bash core/create-worktree.sh --repo /tmp/repo --run-id 1 --job-name test
+    When run env GIT_MOCK_GIT_DIR_STATUS=1 bash core/create_worktree.sh --repo /tmp/repo --run-id 1 --job-name test
     The status should be failure
     The stderr should include "Not a git repo"
   End
@@ -23,7 +23,7 @@ Describe "core/create-worktree.sh"
     REPO="$TMP_DIR/repo"
     mkdir -p "$REPO"
 
-    When run env GIT_MOCK_GIT_DIR_STATUS=0 bash core/create-worktree.sh --repo "$REPO" --run-id 123 --job-name test
+    When run env GIT_MOCK_GIT_DIR_STATUS=0 bash core/create_worktree.sh --repo "$REPO" --run-id 123 --job-name test
     The status should be success
     The output should include "worktree_dir="
   End
@@ -32,7 +32,7 @@ Describe "core/create-worktree.sh"
     REPO="$TMP_DIR/repo"
     mkdir -p "$REPO"
 
-    When run env GIT_MOCK_GIT_DIR_STATUS=0 GIT_MOCK_SHOW_REF_EXISTS=1 bash core/create-worktree.sh --repo "$REPO" --run-id 123 --job-name test
+    When run env GIT_MOCK_GIT_DIR_STATUS=0 GIT_MOCK_SHOW_REF_EXISTS=1 bash core/create_worktree.sh --repo "$REPO" --run-id 123 --job-name test
     The status should be failure
     The stderr should include "Branch already exists"
   End
@@ -42,7 +42,7 @@ Describe "core/create-worktree.sh"
     WORKLOGS_ROOT="$REPO/worklogs"
     mkdir -p "$WORKLOGS_ROOT/123/worktree"
 
-    When run env GIT_MOCK_GIT_DIR_STATUS=0 bash core/create-worktree.sh --repo "$REPO" --run-id 123 --job-name test --worktree-root "$WORKLOGS_ROOT"
+    When run env GIT_MOCK_GIT_DIR_STATUS=0 bash core/create_worktree.sh --repo "$REPO" --run-id 123 --job-name test --worktree-root "$WORKLOGS_ROOT"
     The status should be failure
     The stderr should include "Worktree dir already exists"
   End

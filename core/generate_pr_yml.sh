@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RUN_DIR="${1:?usage: generate-pr-yml.sh <run_dir>}"
+RUN_DIR="${1:?usage: generate_pr_yml.sh <run_dir>}"
 WORKLOG_MD="$RUN_DIR/worklog.md"
 WORKLOG_FALLBACK="$RUN_DIR/logs/worklog.md"
 WORKTREE_DIR="$RUN_DIR/worktree"

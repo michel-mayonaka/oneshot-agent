@@ -5,10 +5,10 @@
 - run_dir は `ONESHOT_RUNS_DIR` 配下に作成されます。
 - 省略時は `worklogs/` 配下になります。
 - oneshot-exec 単独実行の既定は `worklogs/oneshot-exec/` です。
-- `oneshot-exec.sh` は `logs/` を作成します。
+- `oneshot_exec.sh` は `logs/` を作成します。
 - `prompts/` と `inputs/` も作成します。
 - `-C` 省略時は `artifacts/` を作成します。
-- `run-oneshot.sh` は `worklogs/<job>/<run_id>` を使います。
+- `run_oneshot.sh` は `worklogs/<job>/<run_id>` を使います。
 - `worklogs/<job>/` 直下は最新runと `archive/` です。
 - 旧runは `archive/` に移動します。
 - 実行中のrunは `.running` で判定します。
@@ -28,7 +28,7 @@
 - `--input key=path` は `__INPUT_<KEY>__` を置換します。
 - KEY は大文字化されます。
 - パスは `ONESHOT_AGENT_ROOT` 基準で解決します。
-- 置換した入力は `run-oneshot.sh` が記録します。
+- 置換した入力は `run_oneshot.sh` が記録します。
 - 記録先は `inputs/inputs.txt` です。
 仮定:
 - 入力ファイルはテキストとして読めます。

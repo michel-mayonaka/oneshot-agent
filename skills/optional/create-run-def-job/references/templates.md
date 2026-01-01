@@ -86,7 +86,7 @@ pr: true
 <target>:
 	@if [[ -z "$(<TARGET>_INPUT)" ]]; then echo "<TARGET>_INPUT is required"; exit 1; fi
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" \
-		bash core/run-oneshot.sh --job $(<TARGET>_SPEC) --input input=$(<TARGET>_INPUT)
+		bash core/run_oneshot.sh --job $(<TARGET>_SPEC) --input input=$(<TARGET>_INPUT)
 ```
 
 # Notes

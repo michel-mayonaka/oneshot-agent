@@ -3,14 +3,14 @@
 
 Include specs/shells/spec_helper.sh
 
-Describe "core/create-pr.sh"
+Describe "core/create_pr.sh"
   BeforeEach setup_tmp
   AfterEach cleanup_tmp
 
   It "fails when required args are missing"
-    When run bash core/create-pr.sh
+    When run bash core/create_pr.sh
     The status should be failure
-    The output should include "Usage: create-pr.sh"
+    The output should include "Usage: create_pr.sh"
   End
 
   It "fails when gh is missing"
@@ -38,7 +38,7 @@ YAML
     mkdir -p "$BIN"
     ln -s "$SPEC_ROOT/support/bin/git" "$BIN/git"
 
-    When run env PATH="$BIN:/usr/bin:/bin" bash core/create-pr.sh --repo "$REPO" --worktree "$WORKTREE" --pr-yml "$PR_YML"
+    When run env PATH="$BIN:/usr/bin:/bin" bash core/create_pr.sh --repo "$REPO" --worktree "$WORKTREE" --pr-yml "$PR_YML"
     The status should be failure
     The stderr should include "gh command not found"
   End
@@ -67,7 +67,7 @@ YAML
     When run env \
       GIT_MOCK_STATUS=" M file.txt" \
       GIT_MOCK_REVLIST_COUNT=1 \
-      bash core/create-pr.sh --repo "$REPO" --worktree "$WORKTREE" --pr-yml "$PR_YML"
+      bash core/create_pr.sh --repo "$REPO" --worktree "$WORKTREE" --pr-yml "$PR_YML"
 
     The status should be success
     The output should include "pr_url="

@@ -4,7 +4,7 @@
 1. `ONESHOT_AGENT_ROOT` を設定します。
 2. prompt か job spec を用意します。
 3. 必要なら `ONESHOT_PROJECT_ROOT` を設定します。
-4. `core/run-oneshot.sh --job ...` を実行します。
+4. `core/run_oneshot.sh --job ...` を実行します。
 5. 出力された `run_dir` を控えます。
 6. `worklogs/` の `report.md` を確認します。
 
@@ -27,7 +27,7 @@
 - `run_dir` と `logs/` を確認します。
 - 失敗理由をメモし再実行します。
 - worktree 使用時は削除を検討します。
-- `core/remove-worktree.sh` を使います。
+- `core/remove_worktree.sh` を使います。
 
 ## Definition of Done
 - `report.md` が存在します。
@@ -37,7 +37,7 @@
 - worktree 使用時は `run_dir/worktree` が存在します。
 
 ## 保証
-- 標準フローは `run-oneshot.sh` を基準とします。
+- 標準フローは `run_oneshot.sh` を基準とします。
 
 ## 仮定
 - 実行環境と依存コマンドが利用可能です。

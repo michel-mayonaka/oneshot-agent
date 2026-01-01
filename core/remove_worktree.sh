@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: remove-worktree.sh --repo <repo_dir> (--run-id <id> | --path <worktree_dir>) [--worktree-root <dir>] [--worklogs-root <dir>] [--force]
+Usage: remove_worktree.sh --repo <repo_dir> (--run-id <id> | --path <worktree_dir>) [--worktree-root <dir>] [--worklogs-root <dir>] [--force]
 
 Options:
   --repo          Gitリポジトリのルートパス

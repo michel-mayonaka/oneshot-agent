@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: create-pr.sh --repo <repo_dir> --worktree <dir> --pr-yml <path>
+Usage: create_pr.sh --repo <repo_dir> --worktree <dir> --pr-yml <path>
                     [--branch <name>] [--base <branch>] [--commit-message <msg>] [--draft]
 
 Options:

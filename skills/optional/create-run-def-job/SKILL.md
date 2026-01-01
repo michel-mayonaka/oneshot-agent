@@ -14,7 +14,7 @@ description: Create or update run-defs job specs and matching Makefile targets i
 2) `run-defs/jobs/<name>.yml` を作る。  
    - `prompt_text` と `prompt_file` は排他的。  
    - 入力が必要なら `__INPUT_<KEY>__` を本文に埋め、`--input key=path` で渡す前提にする（KEYは大文字化）。  
-   - 既定値の扱いは `core/run-oneshot.sh` の仕様に合わせる。
+   - 既定値の扱いは `core/run_oneshot.sh` の仕様に合わせる。
 3) `Makefile` にターゲットを追加する。  
    - `PHONY` と `*_SPEC` 変数を更新する。  
    - 入力が必要なら `make <target> INPUT=...` 形式でエラーガードを入れる。  

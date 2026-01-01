@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RUN_DIR="${1:?usage: translate-worklog-to-ja.sh <run_dir>}"
+RUN_DIR="${1:?usage: translate_worklog_to_ja.sh <run_dir>}"
 WORKLOG_MD="$RUN_DIR/worklog.md"
 OUT_JA="$RUN_DIR/worklog.ja.md"
 

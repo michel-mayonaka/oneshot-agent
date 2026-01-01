@@ -22,14 +22,14 @@ Codex CLI を1回実行し、ログと成果物を残すハーネスです。
 
 ```bash
 export ONESHOT_AGENT_ROOT="$(pwd)"
-bash core/oneshot-exec.sh "List files and summarize"
+bash core/oneshot_exec.sh "List files and summarize"
 ```
 
 job 実行の最小例です。
 
 ```bash
 export ONESHOT_AGENT_ROOT="$(pwd)"
-bash core/run-oneshot.sh --job run-defs/jobs/doc-audit.yml
+bash core/run_oneshot.sh --job run-defs/jobs/doc-audit.yml
 ```
 
 生成物は `worklogs/` 配下に保存されます。
