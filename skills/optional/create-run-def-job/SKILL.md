@@ -18,7 +18,10 @@ description: Create or update run-defs job specs and matching Makefile targets i
 3) `Makefile` にターゲットを追加する。  
    - `PHONY` と `*_SPEC` 変数を更新する。  
    - 入力が必要なら `make <target> INPUT=...` 形式でエラーガードを入れる。  
-4) 変更後の利用例を短く提示する。
+4) make コマンドで作成したジョブをテスト実行する。  
+   - 入力が必要なら、最小のダミー入力ファイルを作って渡す。  
+   - 例: `make <target> INPUT=inputs/sample.txt`
+5) 変更後の利用例を短く提示する。
 
 # Conventions / Notes
 
