@@ -19,7 +19,6 @@ prompt_text: |
   - `worklogs/` には変更を加えない。
 skills:
   - skills/optional/create-run-def-job/SKILL.md
-  - skills/optional/pr-draft.md
   - skills/optional/create-run-def-job/references/templates.md
 worktree: true
 pr: true

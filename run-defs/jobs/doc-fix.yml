@@ -14,8 +14,6 @@ prompt_text: |
   ```
   __INPUT_AUDIT_REPORT__
   ```
-skills:
-  - skills/optional/pr-draft.md
 worktree: true
 pr: true
 model: gpt-5.2-codex
