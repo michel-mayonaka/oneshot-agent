@@ -13,8 +13,20 @@ WORDS ?=
 CREATE_RUN_DEF_JOB_REQUEST ?=
 SHELLSPEC ?= tools/shellspec/shellspec
 
+WORD_LOOKUP_WORDS :=
+CREATE_RUN_DEF_JOB_TEXT :=
+
+ifneq ($(filter word-lookup,$(MAKECMDGOALS)),)
 WORD_LOOKUP_WORDS := $(filter-out word-lookup,$(MAKECMDGOALS))
+$(WORD_LOOKUP_WORDS):
+	@:
+endif
+
+ifneq ($(filter create-run-def-job,$(MAKECMDGOALS)),)
 CREATE_RUN_DEF_JOB_TEXT := $(filter-out create-run-def-job,$(MAKECMDGOALS))
+$(CREATE_RUN_DEF_JOB_TEXT):
+	@:
+endif
 
 doc-audit:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --job $(DOC_AUDIT_SPEC)
@@ -35,9 +47,6 @@ word-lookup:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --job $(WORD_LOOKUP_SPEC) --input words=$$TMP_DIR/words.txt; \
 	rm -rf $$TMP_DIR
 
-$(WORD_LOOKUP_WORDS):
-	@:
-
 create-run-def-job:
 	@REQUEST_PATH="$(CREATE_RUN_DEF_JOB_REQUEST)"; \
 	REQUEST_TEXT="$(CREATE_RUN_DEF_JOB_TEXT)"; \
@@ -53,9 +62,6 @@ create-run-def-job:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" \
 		bash core/run-oneshot.sh --job $(CREATE_RUN_DEF_JOB_SPEC) --input job_request=$$REQUEST_PATH; \
 	rm -rf $$TMP_DIR
-
-$(CREATE_RUN_DEF_JOB_TEXT):
-	@:
 
 test: test-shellspec test-doc
 

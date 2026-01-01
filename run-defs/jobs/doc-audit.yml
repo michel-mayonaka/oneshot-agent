@@ -22,5 +22,7 @@ prompt_text: |
 skills:
   - doc-audit
 worktree: false
+model: gpt-5.2-codex
+thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true

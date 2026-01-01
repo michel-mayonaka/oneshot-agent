@@ -11,5 +11,7 @@ prompt_text: |
   - 最後に変更内容のサマリ（変更ファイル一覧 / 要確認事項）をMarkdownでまとめる。
 worktree: true
 pr: true
+model: gpt-5.2-codex
+thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true

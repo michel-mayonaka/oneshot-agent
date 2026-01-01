@@ -24,5 +24,7 @@ skills:
   - create-run-def-job
 worktree: true
 pr: true
+model: gpt-5.2-codex
+thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true
