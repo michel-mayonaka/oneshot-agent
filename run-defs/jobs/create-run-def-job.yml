@@ -1,0 +1,28 @@
+name: create-run-def-job
+prompt_text: |
+  あなたはこのリポジトリの job 定義と Makefile ターゲットを作成する担当です。
+
+  依頼内容:
+  ```
+  __INPUT_JOB_REQUEST__
+  ```
+
+  要件:
+  - 入力から job の名前 / 種別（監査・修正・辞書・調査・実装） / 入力 / 出力 / worktree / pr / skills / model / thinking などを判断する。
+  - 不足情報がある場合は「質問」セクションに列挙し、リポジトリの変更は行わない。
+  - 情報が十分な場合は以下を行う:
+    1) `run-defs/jobs/<job-name>.yml` を作成
+    2) `Makefile` にターゲット追加（PHONY / <TARGET>_SPEC / 入力変数 / エラーガード）
+    3) 変更内容と実行例を短く記載
+  - `prompt_text` と `prompt_file` は排他的にする。
+  - 入力が必要なら `__INPUT_<KEY>__` を本文に埋め、`--input key=path` で渡す前提にする（KEYは大文字化）。
+  - `worklogs/` には変更を加えない。
+
+  参考:
+  - skills/optional/create-run-def-job.md と references/templates.md を参照して進める。
+skills:
+  - create-run-def-job
+worktree: true
+pr: true
+# target_dir: /path/to/project
+# disable_global_skills: true

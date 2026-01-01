@@ -1,16 +1,19 @@
 SHELL := /bin/bash
 
-.PHONY: doc-audit doc-fix word-lookup test test-doc test-shellspec
+.PHONY: doc-audit doc-fix word-lookup create-run-def-job test test-doc test-shellspec
 
 PROJECT_ROOT ?= $(CURDIR)
 DOC_AUDIT_SPEC ?= run-defs/jobs/doc-audit.yml
 DOC_FIX_SPEC ?= run-defs/jobs/doc-fix.yml
 WORD_LOOKUP_SPEC ?= run-defs/jobs/word-lookup.yml
+CREATE_RUN_DEF_JOB_SPEC ?= run-defs/jobs/create-run-def-job.yml
 REPORT ?=
 WORDS ?=
+CREATE_RUN_DEF_JOB_REQUEST ?=
 SHELLSPEC ?= tools/shellspec/shellspec
 
 WORD_LOOKUP_WORDS := $(filter-out word-lookup,$(MAKECMDGOALS))
+CREATE_RUN_DEF_JOB_TEXT := $(filter-out create-run-def-job,$(MAKECMDGOALS))
 
 doc-audit:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --job $(DOC_AUDIT_SPEC)
@@ -29,6 +32,25 @@ word-lookup:
 	rm -rf $$TMP_DIR
 
 $(WORD_LOOKUP_WORDS):
+	@:
+
+create-run-def-job:
+	@REQUEST_PATH="$(CREATE_RUN_DEF_JOB_REQUEST)"; \
+	REQUEST_TEXT="$(CREATE_RUN_DEF_JOB_TEXT)"; \
+	if [[ -z "$$REQUEST_PATH" && -z "$$REQUEST_TEXT" ]]; then \
+		echo "CREATE_RUN_DEF_JOB_REQUEST is required (e.g. make create-run-def-job CREATE_RUN_DEF_JOB_REQUEST=inputs/job-request.md or make create-run-def-job <free-text...>)"; \
+		exit 1; \
+	fi; \
+	TMP_DIR=$$(mktemp -d); \
+	if [[ -z "$$REQUEST_PATH" ]]; then \
+		printf '%s\n' "$$REQUEST_TEXT" > $$TMP_DIR/job-request.txt; \
+		REQUEST_PATH="$$TMP_DIR/job-request.txt"; \
+	fi; \
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" \
+		bash core/run-oneshot.sh --job $(CREATE_RUN_DEF_JOB_SPEC) --input job_request=$$REQUEST_PATH; \
+	rm -rf $$TMP_DIR
+
+$(CREATE_RUN_DEF_JOB_TEXT):
 	@:
 
 test: test-shellspec test-doc
