@@ -1,10 +1,11 @@
 SHELL := /bin/bash
 
-.PHONY: doc-audit doc-fix word-lookup test test-doc test-shellspec
+.PHONY: doc-audit doc-fix doc-reference-update word-lookup test test-doc test-shellspec
 
 PROJECT_ROOT ?= $(CURDIR)
 DOC_AUDIT_SPEC ?= run-defs/jobs/doc-audit.yml
 DOC_FIX_SPEC ?= run-defs/jobs/doc-fix.yml
+DOC_REFERENCE_UPDATE_SPEC ?= run-defs/jobs/doc-reference-update.yml
 WORD_LOOKUP_SPEC ?= run-defs/jobs/word-lookup.yml
 REPORT ?=
 WORDS ?=
@@ -18,6 +19,9 @@ doc-audit:
 doc-fix:
 	@if [[ -z "$(REPORT)" ]]; then echo "REPORT is required (e.g. make doc-fix REPORT=worklogs/doc-audit/<run_id>/report.md)"; exit 1; fi
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --job $(DOC_FIX_SPEC) --input audit_report=$(REPORT)
+
+doc-reference-update:
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run-oneshot.sh --job $(DOC_REFERENCE_UPDATE_SPEC)
 
 word-lookup:
 	@WORDS_LIST="$(WORDS)"; \
