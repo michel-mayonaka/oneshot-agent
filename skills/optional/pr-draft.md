@@ -13,6 +13,9 @@ description: Generate PR title and body from the performed changes and include t
 タイトル: <1行で簡潔なPRタイトル>
 本文:
 ```markdown
+# ジョブ名
+- <job-name>
+
 # 概要
 - <何を/なぜやったかを1-2行>
 
@@ -33,3 +36,4 @@ description: Generate PR title and body from the performed changes and include t
 - 本文は必ず ```markdown のコードブロックで囲み、この中の見出しは「#」を使う。
 - 見出しと項目の順序を変えない（概要→変更点→影響範囲→確認コマンド）。
 - 本文にURLが必要なら、文章内に直接書かずプレーンテキストで記載する。
+- ジョブ名が不明な場合は「不明」と書く。

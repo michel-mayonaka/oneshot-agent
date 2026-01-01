@@ -6,6 +6,7 @@ WORKLOG_MD="$RUN_DIR/worklog.md"
 WORKLOG_FALLBACK="$RUN_DIR/logs/worklog.md"
 WORKTREE_DIR="$RUN_DIR/worktree"
 OUT_YML="$RUN_DIR/pr.yml"
+RUN_ONESHOT_LOG="$RUN_DIR/logs/run-oneshot.log"
 
 if [[ ! -f "$WORKLOG_MD" ]]; then
   if [[ -f "$WORKLOG_FALLBACK" ]]; then
@@ -31,6 +32,14 @@ if ! command -v codex >/dev/null 2>&1; then
   exit 1
 fi
 
+JOB_NAME=""
+if [[ -f "$RUN_ONESHOT_LOG" ]]; then
+  JOB_NAME="$(awk -F= '/^name=/{print $2; exit}' "$RUN_ONESHOT_LOG")"
+fi
+if [[ -z "$JOB_NAME" ]]; then
+  JOB_NAME="$(basename "$(dirname "$RUN_DIR")")"
+fi
+
 MODEL="${ONESHOT_PR_MODEL:-gpt-5.2}"
 DIFF_MAX_LINES="${ONESHOT_PR_DIFF_MAX_LINES:-2000}"
 
@@ -54,6 +63,9 @@ Output requirements:
 
 PR body template (must follow exactly):
 ```markdown
+# ジョブ名
+- <job-name>
+
 # 概要
 - <何を/なぜやったかを1-2行>
 
@@ -71,9 +83,13 @@ Notes:
 - Do not change heading order or labels.
 - No URLs inside the body. If necessary, write URLs as plain text.
 - Keep the title concise, one line.
+- Use the provided job name in the template as-is.
 
 ----- DIFF NAME STATUS -----
 EOF
+  echo "Job name: ${JOB_NAME}"
+  echo ""
+  echo "----- DIFF NAME STATUS -----"
   printf '%s\n' "$DIFF_NAMESTAT"
   cat <<'EOF'
 ----- DIFF STAT -----
