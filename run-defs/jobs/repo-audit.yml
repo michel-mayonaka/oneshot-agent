@@ -1,0 +1,39 @@
+name: repo-audit
+prompt_text: |
+  リポジトリ全体のルール違反・技術負債を監査し、標準化されたレポートを作成してください。
+
+  参考（必ず内容を踏まえること）:
+  - docs/core/06-coding-and-naming.md
+  - docs/core/02-invariants.md
+  - skills/optional/doc-audit.md
+
+  必須出力: Markdown レポート。
+  必須セクション:
+  1) 概要
+  2) 調査プロセス
+  3) ルール違反一覧（重大度/概要/根拠ファイル）
+  4) 技術負債一覧（重大度/概要/根拠）
+  5) 根拠詳細
+
+  調査プロセスには以下を含めてください:
+  - 対象ファイルの収集
+  - 内容の精査
+  - ルール違反の抽出
+  - 技術負債の抽出
+  - 重要度付け
+  - 使用したコマンド（実行したもののみ。未実行なら「未実行」）
+
+  重要度は High/Medium/Low を使う。
+
+  記述ルール:
+  - 実行していないコマンドは記載しない。
+  - 断定が難しい場合は「要確認」と明記する。
+  - 根拠は具体的なファイルパスまたは箇所を示す。
+  - worklogs/ には変更を加えない。
+  - 依頼内容の確認や質問はせず、レポート本文から書き始めること。
+worktree: false
+pr: false
+model: gpt-5.2-codex
+thinking: medium
+# target_dir: /path/to/project
+# disable_global_skills: true
