@@ -30,12 +30,13 @@
 - `core/create_pr.sh`: PR作成（要 gh）。
 - `core/create_issue.sh`: Issue作成（要 gh）。
 - `core/fetch_issue.sh`: Issue取得（要 gh）。
+- `core/run_mode.sh`: mode spec で Codex セッションを起動。
 - `core/translate_worklog_to_ja.sh`: ログ翻訳。
 
 ## ディレクトリ責務マップ
 - `core/`: 実行・集計のスクリプト群。
 - `run-defs/jobs/`: run_oneshot 用 YAML 定義。
-- `run-defs/modes/`: Codex 起動時に読ませる情報のバンドル定義（予定）。
+- `run-defs/modes/`: Codex セッション起動用のモード定義。
 - `skills/global/`: 常時前置するガイド。
 - `skills/optional/`: 任意で読み込むガイド。
 - `specs/shells/`: ShellSpec のテスト。

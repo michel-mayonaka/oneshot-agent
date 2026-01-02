@@ -41,6 +41,12 @@ make issue-create ISSUE_REQUEST=inputs/issue-request.md
 make issue-apply ISSUE=123
 ```
 
+planning モードの例です。
+
+```bash
+make mode-planning PLAN_REQUEST=inputs/plan-request.md
+```
+
 ## ドキュメント
 - docs/core/01-purpose.md
 - docs/core/02-invariants.md
@@ -49,6 +55,7 @@ make issue-apply ISSUE=123
 - docs/core/05-decisions.md
 - docs/core/adr/0001-record-architecture-decisions.md
 - docs/core/07-issue-workflow.md
+- docs/core/08-modes.md
 
 ## 問い合わせ / Issue
 GitHub Issue を利用してください。

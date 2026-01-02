@@ -1,11 +1,12 @@
 SHELL := /bin/bash
 
-.PHONY: doc-audit-fix issue-create issue-apply doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
+.PHONY: doc-audit-fix issue-create issue-apply mode-planning doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
 
 PROJECT_ROOT ?= $(CURDIR)
 DOC_AUDIT_FIX_SPEC ?= run-defs/jobs/doc-audit-fix.yml
 ISSUE_CREATE_SPEC ?= run-defs/jobs/issue-create.yml
 ISSUE_APPLY_SPEC ?= run-defs/jobs/issue-apply.yml
+PLANNING_MODE_SPEC ?= run-defs/modes/planning.yml
 DOC_REFERENCE_UPDATE_SPEC ?= run-defs/jobs/doc-reference-update.yml
 WORD_LOOKUP_SPEC ?= run-defs/jobs/word-lookup.yml
 CREATE_RUN_DEF_JOB_SPEC ?= run-defs/jobs/create-run-def-job.yml
@@ -14,6 +15,7 @@ CREATE_RUN_DEF_JOB_REQUEST ?=
 ISSUE_REQUEST ?=
 ISSUE ?=
 ISSUE_FILE ?=
+PLAN_REQUEST ?=
 SHELLSPEC ?= tools/shellspec/shellspec
 
 WORD_LOOKUP_WORDS :=
@@ -52,6 +54,10 @@ issue-apply:
 	fi; \
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(ISSUE_APPLY_SPEC) --input issue=$$ISSUE_PATH; \
 	rm -rf $$TMP_DIR
+
+mode-planning:
+	@if [[ -z "$(PLAN_REQUEST)" ]]; then echo "PLAN_REQUEST is required (e.g. make mode-planning PLAN_REQUEST=inputs/plan-request.md)"; exit 1; fi
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_mode.sh --mode $(PLANNING_MODE_SPEC) --input plan_request=$(PLAN_REQUEST)
 
 doc-reference-update:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_REFERENCE_UPDATE_SPEC)

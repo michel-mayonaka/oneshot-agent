@@ -28,6 +28,28 @@ assignees:
 milestone: "v1.2"
 ```
 
+### 具体例
+```yaml
+title: "doc-audit-fix の手順説明を更新する"
+body: |
+  # 背景
+  - README.md と docs の手順が一致していない
+  # 目的
+  - 実行例を最新のジョブ名に合わせる
+  # 作業範囲
+  - README.md
+  - docs/core/04-workflow.md
+  # 受け入れ条件
+  - 例に記載のジョブ名が一致している
+  # 参考
+  - worklogs/.../report.md
+labels:
+  - docs
+assignees:
+  - tkg-engineer
+milestone: "v1.0"
+```
+
 複数 Issue が必要な場合は、`issue.yml` を複数ファイルに分割します。
 `run-defs/jobs/issue-create.yml` は `issues/issue-001.yml` のように連番で出力する想定です。
 

@@ -1,0 +1,52 @@
+name: issue-planning
+prompt_text: |
+  以下の依頼をもとに、作業計画とIssue案を作成し、承認後にIssue化してください。
+
+  依頼:
+  ```
+  __INPUT_PLAN_REQUEST__
+  ```
+
+  手順:
+  1) 目的/背景/スコープを整理する。
+  2) 必要なら簡易調査を行う（根拠を明記）。
+  3) 具体的なタスク分解と順序を作る。
+  4) 複数Issueが妥当なら分割する。
+
+  Issue化:
+  - issue-request を $ONESHOT_MODE_INPUTS_DIR/issue-request.md に出力する。
+  - まず提案（計画とIssue案）を提示し、承認を求める。
+  - 承認されたら、以下を実行して Issue を作成する。
+    bash core/run_oneshot.sh --job run-defs/jobs/issue-create.yml --input issue_request=$ONESHOT_MODE_INPUTS_DIR/issue-request.md
+
+  issue-request には必ず以下を含める:
+  - 背景 / 目的 / 作業範囲 / 受け入れ条件 / 参考
+  - ラベル / アサイン / マイルストーンの希望（必要な場合）
+  - 複数Issueの場合は分割理由と各Issueの要約
+
+  issue-request の具体例:
+  ```
+  # 背景
+  - ○○の説明が古い
+  # 目的
+  - 最新手順へ更新する
+  # 作業範囲
+  - docs/core/04-workflow.md
+  # 受け入れ条件
+  - 手順とコマンドが一致する
+  # 参考
+  - worklogs/.../report.md
+  # ラベル
+  - docs
+  # アサイン
+  - tkg-engineer
+  # マイルストーン
+  - v1.0
+  ```
+
+  注意:
+  - 断定が難しい場合は「要確認」と明記する。
+  - コマンドは実行したもののみ記載する。
+skills:
+model: gpt-5.2-codex
+thinking: medium

@@ -23,6 +23,11 @@
 - 対応: `logs/stderr_and_time.txt` を確認します。
 - 対応: 必要なら worktree を削除します。
 
+## モードフロー
+- `core/run_mode.sh --mode run-defs/modes/<mode>.yml` でセッションを起動します。
+- `--input` を使って `__INPUT_<KEY>__` を置換できます。
+- モード内で issue 作成などの自動実行を指示できます。
+
 ## 手動復旧手順
 - `run_dir` と `logs/` を確認します。
 - 失敗理由をメモし再実行します。
