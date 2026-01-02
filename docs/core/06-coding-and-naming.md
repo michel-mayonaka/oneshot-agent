@@ -21,7 +21,7 @@
 ## 具体例
 - `core/run_oneshot.sh`
 - `specs/shells/core/run_oneshot_spec.sh`
-- `run-defs/jobs/doc-audit.yml`
+- `run-defs/jobs/doc-audit-fix.yml`
 - `docs/core/06-coding-and-naming.md`
 
 ## コーディング規約（必須）

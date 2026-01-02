@@ -29,10 +29,17 @@ job 実行の最小例です。
 
 ```bash
 export ONESHOT_AGENT_ROOT="$(pwd)"
-bash core/run_oneshot.sh --job run-defs/jobs/doc-audit.yml
+bash core/run_oneshot.sh --job run-defs/jobs/doc-audit-fix.yml
 ```
 
 生成物は `worklogs/` 配下に保存されます。
+
+Issue 作成/適用の例です。
+
+```bash
+make issue-create ISSUE_REQUEST=inputs/issue-request.md
+make issue-apply ISSUE=123
+```
 
 ## ドキュメント
 - docs/core/01-purpose.md
@@ -41,6 +48,7 @@ bash core/run_oneshot.sh --job run-defs/jobs/doc-audit.yml
 - docs/core/04-workflow.md
 - docs/core/05-decisions.md
 - docs/core/adr/0001-record-architecture-decisions.md
+- docs/core/07-issue-workflow.md
 
 ## 問い合わせ / Issue
 GitHub Issue を利用してください。

@@ -1,0 +1,20 @@
+name: issue-apply
+prompt_text: |
+  以下の GitHub Issue（YAML）を参照して、必要な作業を実行してください。
+
+  Issue:
+  ```
+  __INPUT_ISSUE__
+  ```
+
+  ルール:
+  - Issue の「受け入れ条件」を満たすことを最優先にする。
+  - 不明点があれば「要確認」として明記する。
+  - 変更対象は依頼内容に応じて判断する（不要な変更はしない）。
+  - worklogs/ には変更を加えない。
+  - 最後に Markdown でレポートを出力（概要/変更点/確認コマンド）。
+worktree: true
+model: gpt-5.2-codex
+thinking: medium
+# target_dir: /path/to/project
+# disable_global_skills: true

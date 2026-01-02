@@ -1,16 +1,19 @@
 SHELL := /bin/bash
 
-.PHONY: doc-audit doc-fix doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
+.PHONY: doc-audit-fix issue-create issue-apply doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
 
 PROJECT_ROOT ?= $(CURDIR)
-DOC_AUDIT_SPEC ?= run-defs/jobs/doc-audit.yml
-DOC_FIX_SPEC ?= run-defs/jobs/doc-fix.yml
+DOC_AUDIT_FIX_SPEC ?= run-defs/jobs/doc-audit-fix.yml
+ISSUE_CREATE_SPEC ?= run-defs/jobs/issue-create.yml
+ISSUE_APPLY_SPEC ?= run-defs/jobs/issue-apply.yml
 DOC_REFERENCE_UPDATE_SPEC ?= run-defs/jobs/doc-reference-update.yml
 WORD_LOOKUP_SPEC ?= run-defs/jobs/word-lookup.yml
 CREATE_RUN_DEF_JOB_SPEC ?= run-defs/jobs/create-run-def-job.yml
-REPORT ?=
 WORDS ?=
 CREATE_RUN_DEF_JOB_REQUEST ?=
+ISSUE_REQUEST ?=
+ISSUE ?=
+ISSUE_FILE ?=
 SHELLSPEC ?= tools/shellspec/shellspec
 
 WORD_LOOKUP_WORDS :=
@@ -28,12 +31,27 @@ $(CREATE_RUN_DEF_JOB_TEXT):
 	@:
 endif
 
-doc-audit:
-	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_AUDIT_SPEC)
+doc-audit-fix:
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_AUDIT_FIX_SPEC)
 
-doc-fix:
-	@if [[ -z "$(REPORT)" ]]; then echo "REPORT is required (e.g. make doc-fix REPORT=worklogs/doc-audit/<run_id>/report.md)"; exit 1; fi
-	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_FIX_SPEC) --input audit_report=$(REPORT)
+issue-create:
+	@if [[ -z "$(ISSUE_REQUEST)" ]]; then echo "ISSUE_REQUEST is required (e.g. make issue-create ISSUE_REQUEST=inputs/issue-request.md)"; exit 1; fi
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(ISSUE_CREATE_SPEC) --input issue_request=$(ISSUE_REQUEST)
+
+issue-apply:
+	@TMP_DIR=$$(mktemp -d); \
+	ISSUE_PATH="$(ISSUE_FILE)"; \
+	if [[ -z "$$ISSUE_PATH" ]]; then \
+		if [[ -z "$(ISSUE)" ]]; then \
+			echo "ISSUE or ISSUE_FILE is required (e.g. make issue-apply ISSUE=123 or ISSUE_FILE=inputs/issue.yml)"; \
+			rm -rf $$TMP_DIR; \
+			exit 1; \
+		fi; \
+		ISSUE_PATH="$$TMP_DIR/issue.yml"; \
+		ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/fetch_issue.sh --repo "$(PROJECT_ROOT)" --issue "$(ISSUE)" --out "$$ISSUE_PATH"; \
+	fi; \
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(ISSUE_APPLY_SPEC) --input issue=$$ISSUE_PATH; \
+	rm -rf $$TMP_DIR
 
 doc-reference-update:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_REFERENCE_UPDATE_SPEC)
@@ -72,7 +90,6 @@ test-shellspec:
 test-doc:
 	@TMP_DIR=$$(mktemp -d); \
 	printf '# Dummy Report\n' > $$TMP_DIR/audit_report.md; \
-	ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_AUDIT_SPEC) --render-only >/dev/null; \
-	ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_FIX_SPEC) --input audit_report=$$TMP_DIR/audit_report.md --render-only >/dev/null; \
+	ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_AUDIT_FIX_SPEC) --render-only >/dev/null; \
 	rm -rf $$TMP_DIR; \
 	echo "OK"

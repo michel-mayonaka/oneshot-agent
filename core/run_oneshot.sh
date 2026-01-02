@@ -6,8 +6,8 @@ usage() {
 Usage: run_oneshot.sh --job <job.yml> [--audit-report <file>] [--input <key=path>] [--render-only]
 
 YAML job spec (flat):
-  name: doc-audit
-  prompt_file: prompts/doc-audit.md
+  name: doc-audit-fix
+  prompt_file: prompts/doc-audit-fix.md
   prompt_text: "..."
   skills:
     - doc-audit
@@ -17,6 +17,7 @@ YAML job spec (flat):
   pr: true
   pr_yml: true
   pr_draft: true
+  issue: true
   disable_global_skills: true
   model: gpt-5.2-codex
   thinking: medium
@@ -112,6 +113,7 @@ USE_WORKTREE=""
 PR_ENABLED=""
 PR_YML=""
 PR_DRAFT=""
+ISSUE_ENABLED=""
 DISABLE_GLOBAL=""
 MODEL=""
 THINKING=""
@@ -186,6 +188,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       pr) PR_ENABLED="$val" ;;
       pr_yml) PR_YML="$val" ;;
       pr_draft) PR_DRAFT="$val" ;;
+      issue) ISSUE_ENABLED="$val" ;;
       disable_global_skills) DISABLE_GLOBAL="$val" ;;
       model) MODEL="$val" ;;
       thinking|thinking_level) THINKING="$val" ;;
@@ -595,4 +598,30 @@ if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
 
   PR_OUTPUT="$("$PR_SCRIPT" "${PR_ARGS[@]}")"
   emit "$PR_OUTPUT"
+fi
+
+# Issue作成（有効時のみ）
+if [[ "$ISSUE_ENABLED" == "true" || "$ISSUE_ENABLED" == "1" ]]; then
+  if [[ -z "$RUN_DIR" ]]; then
+    echo "run_dir not found; cannot create issue" >&2
+    exit 1
+  fi
+  ISSUE_SCRIPT="$ROOT_DIR/core/create_issue.sh"
+  if [[ ! -x "$ISSUE_SCRIPT" ]]; then
+    echo "create_issue.sh not found: $ISSUE_SCRIPT" >&2
+    exit 1
+  fi
+  ISSUE_PATH=""
+  if [[ -d "$RUN_DIR/issues" ]]; then
+    ISSUE_PATH="$RUN_DIR/issues"
+  elif [[ -f "$RUN_DIR/issue.yml" ]]; then
+    ISSUE_PATH="$RUN_DIR/issue.yml"
+  elif [[ -f "$RUN_DIR/issue.yaml" ]]; then
+    ISSUE_PATH="$RUN_DIR/issue.yaml"
+  else
+    echo "issue.yml not found in run_dir: $RUN_DIR" >&2
+    exit 1
+  fi
+  ISSUE_OUTPUT="$("$ISSUE_SCRIPT" --repo "$REPO_DIR" --issue-yml "$ISSUE_PATH")"
+  emit "$ISSUE_OUTPUT"
 fi

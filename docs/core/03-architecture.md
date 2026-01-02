@@ -28,6 +28,8 @@
 - `core/remove_worktree.sh`: worktree 削除。
 - `core/generate_pr_yml.sh`: PR下書き生成。
 - `core/create_pr.sh`: PR作成（要 gh）。
+- `core/create_issue.sh`: Issue作成（要 gh）。
+- `core/fetch_issue.sh`: Issue取得（要 gh）。
 - `core/translate_worklog_to_ja.sh`: ログ翻訳。
 
 ## ディレクトリ責務マップ

@@ -26,7 +26,7 @@
   既存プロジェクトディレクトリをカレントディレクトリとして Codex を実行します（ログは引き続きハーネス側の `worklogs/` に保存）。
 - `bash core/summarize_run.sh worklogs/<run_id>` / `bash core/summarize_run.sh worklogs/<job>/<run_id>`  
   指定 run の要約レポート (`report.md`) を生成・更新します。
-- `bash core/run_oneshot.sh --job run-defs/jobs/doc-audit.yml`  
+- `bash core/run_oneshot.sh --job run-defs/jobs/doc-audit-fix.yml`  
   job spec に基づく実行（skills / inputs / worktree / PR の一括処理）。
 - Codex CLI 前提のため、`codex` コマンドが `PATH` にあることを確認してください。
 
@@ -39,7 +39,7 @@
 
 ## テスト・検証方針
 - 変更後は最低でも以下を手動実行して確認してください:
-- `bash core/run_oneshot.sh --job run-defs/jobs/doc-audit.yml`
+- `bash core/run_oneshot.sh --job run-defs/jobs/doc-audit-fix.yml`
   - 生成された `worklogs/<job>/<run_id>/report.md` を開き、想定どおりの情報が出力されているか確認
 - 既存の引数インターフェース（位置引数 / 必須オプション）を壊さないよう注意してください。
 
