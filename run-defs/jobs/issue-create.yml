@@ -11,35 +11,15 @@ prompt_text: |
   - 1件の場合: $ONESHOT_RUNS_DIR/$ONESHOT_RUN_ID/issue.yml
   - 複数の場合: $ONESHOT_RUNS_DIR/$ONESHOT_RUN_ID/issues/issue-001.yml 以降
 
-  issue.yml の必須フォーマット:
-  ```
-  title: "<短いタイトル>"
-  body: |
-    # 背景
-    - ...
-    # 目的
-    - ...
-    # 作業範囲
-    - ...
-    # 受け入れ条件
-    - ...
-    # 参考
-    - ...
-  labels:
-    - <label1>
-    - <label2>
-  assignees:
-    - <assignee1>
-  milestone: "<milestone>"
-  ```
+  issue.yml のフォーマットと記述ルールは skills/optional/issue-template.md に従う。
 
   ルール:
-  - title と body は必須。
-  - labels / assignees / milestone は必要な場合のみ記載（不要なら空配列 or 空文字）。
   - labels と assignees は複数指定可。
   - 複数 issue が妥当な場合は分割し、個別に issue.yml を出力。
   - 最後に Markdown で簡潔なレポートを出力（作成した issue.yml の一覧を含める）。
 issue: true
+skills:
+  - skills/optional/issue-template.md
 model: gpt-5.2-codex
 thinking: medium
 # target_dir: /path/to/project
