@@ -1,9 +1,10 @@
 SHELL := /bin/bash
 
-.PHONY: doc-audit-fix issue-create issue-apply mode-planning doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
+.PHONY: doc-audit-fix repo-audit issue-create issue-apply mode-planning doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
 
 PROJECT_ROOT ?= $(CURDIR)
 DOC_AUDIT_FIX_SPEC ?= run-defs/jobs/doc-audit-fix.yml
+REPO_AUDIT_SPEC ?= run-defs/jobs/repo-audit.yml
 ISSUE_CREATE_SPEC ?= run-defs/jobs/issue-create.yml
 ISSUE_APPLY_SPEC ?= run-defs/jobs/issue-apply.yml
 PLANNING_MODE_SPEC ?= run-defs/modes/planning.yml
@@ -43,6 +44,9 @@ endif
 
 doc-audit-fix:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_AUDIT_FIX_SPEC)
+
+repo-audit:
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(REPO_AUDIT_SPEC)
 
 issue-create:
 	@if [[ -z "$(ISSUE_REQUEST)" ]]; then echo "ISSUE_REQUEST is required (e.g. make issue-create ISSUE_REQUEST=inputs/issue-request.md)"; exit 1; fi
