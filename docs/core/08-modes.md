@@ -9,6 +9,12 @@
 bash core/run_mode.sh --mode run-defs/modes/planning.yml --input plan_request=inputs/plan-request.md
 ```
 
+## Makefile 経由
+```bash
+make mode-planning PLAN_REQUEST=inputs/plan-request.md
+make mode-planning 調査してIssue化したい内容
+```
+
 ## モードYAML（例）
 ```yaml
 name: issue-planning

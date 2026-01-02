@@ -16,6 +16,8 @@ ISSUE_REQUEST ?=
 ISSUE ?=
 ISSUE_FILE ?=
 PLAN_REQUEST ?=
+PLAN_TEXT ?=
+MODE_PLANNING_TEXT :=
 SHELLSPEC ?= tools/shellspec/shellspec
 
 WORD_LOOKUP_WORDS :=
@@ -30,6 +32,12 @@ endif
 ifneq ($(filter create-run-def-job,$(MAKECMDGOALS)),)
 CREATE_RUN_DEF_JOB_TEXT := $(filter-out create-run-def-job,$(MAKECMDGOALS))
 $(CREATE_RUN_DEF_JOB_TEXT):
+	@:
+endif
+
+ifneq ($(filter mode-planning,$(MAKECMDGOALS)),)
+MODE_PLANNING_TEXT := $(filter-out mode-planning,$(MAKECMDGOALS))
+$(MODE_PLANNING_TEXT):
 	@:
 endif
 
@@ -56,8 +64,20 @@ issue-apply:
 	rm -rf $$TMP_DIR
 
 mode-planning:
-	@if [[ -z "$(PLAN_REQUEST)" ]]; then echo "PLAN_REQUEST is required (e.g. make mode-planning PLAN_REQUEST=inputs/plan-request.md)"; exit 1; fi
-	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_mode.sh --mode $(PLANNING_MODE_SPEC) --input plan_request=$(PLAN_REQUEST)
+	@REQUEST_PATH="$(PLAN_REQUEST)"; \
+	REQUEST_TEXT="$(PLAN_TEXT)"; \
+	if [[ -z "$$REQUEST_TEXT" ]]; then REQUEST_TEXT="$(MODE_PLANNING_TEXT)"; fi; \
+	if [[ -z "$$REQUEST_PATH" && -z "$$REQUEST_TEXT" ]]; then \
+		echo "PLAN_REQUEST or free text is required (e.g. make mode-planning PLAN_REQUEST=inputs/plan-request.md or make mode-planning <free-text...>)"; \
+		exit 1; \
+	fi; \
+	TMP_DIR=$$(mktemp -d); \
+	if [[ -z "$$REQUEST_PATH" ]]; then \
+		printf '%s\n' "$$REQUEST_TEXT" > $$TMP_DIR/plan-request.txt; \
+		REQUEST_PATH="$$TMP_DIR/plan-request.txt"; \
+	fi; \
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_mode.sh --mode $(PLANNING_MODE_SPEC) --input plan_request=$$REQUEST_PATH; \
+	rm -rf $$TMP_DIR
 
 doc-reference-update:
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(DOC_REFERENCE_UPDATE_SPEC)

@@ -45,6 +45,7 @@ planning モードの例です。
 
 ```bash
 make mode-planning PLAN_REQUEST=inputs/plan-request.md
+make mode-planning 調査してIssue化したい内容
 ```
 
 ## ドキュメント
