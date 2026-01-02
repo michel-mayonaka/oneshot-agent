@@ -31,8 +31,8 @@ prompt_text: |
   - 根拠は具体的なファイルパスまたは箇所を示す。
   - worklogs/ には変更を加えない。
   - 依頼内容の確認や質問はせず、レポート本文から書き始めること。
-worktree: false
-pr: false
+worktree: true
+pr: true
 model: gpt-5.2-codex
 thinking: medium
 # target_dir: /path/to/project
