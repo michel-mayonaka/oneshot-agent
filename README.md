@@ -41,6 +41,12 @@ make issue-create ISSUE_REQUEST=inputs/issue-request.md
 make issue-apply ISSUE=123
 ```
 
+PRレビュー対応の例です。
+
+```bash
+make pr-review-fix PR=123
+```
+
 planning モードの例です。
 
 ```bash

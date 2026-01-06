@@ -14,6 +14,8 @@ YAML job spec (flat):
     # or file paths: skills/optional/doc-audit.md
   target_dir: /path/to/project
   worktree: true
+  worktree_pr: true
+  worktree_pr_input: pr
   pr: true
   pr_yml: true
   pr_draft: true
@@ -104,12 +106,44 @@ set_input() {
   INPUT_VALS+=("$v")
 }
 
+get_input_value() {
+  local k="$1"
+  local i
+  for i in "${!INPUT_KEYS[@]}"; do
+    if [[ "${INPUT_KEYS[$i]}" == "$k" ]]; then
+      printf '%s' "${INPUT_VALS[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+resolve_input_path() {
+  local v="$1"
+  local resolved_path=""
+  if [[ -z "${ONESHOT_AGENT_ROOT:-}" ]]; then
+    return 1
+  fi
+  resolved_path="$ONESHOT_AGENT_ROOT/$v"
+  if [[ -f "$resolved_path" ]]; then
+    printf '%s' "$resolved_path"
+    return 0
+  fi
+  if [[ -f "$v" ]]; then
+    printf '%s' "$v"
+    return 0
+  fi
+  return 1
+}
+
 # job spec から読み取る設定値
 NAME=""
 PROMPT_FILE=""
 PROMPT_TEXT=""
 TARGET_DIR=""
 USE_WORKTREE=""
+WORKTREE_PR=""
+WORKTREE_PR_INPUT=""
 PR_ENABLED=""
 PR_YML=""
 PR_DRAFT=""
@@ -185,6 +219,8 @@ while IFS= read -r line || [[ -n "$line" ]]; do
         ;;
       target_dir) TARGET_DIR="$val" ;;
       worktree) USE_WORKTREE="$val" ;;
+      worktree_pr) WORKTREE_PR="$val" ;;
+      worktree_pr_input) WORKTREE_PR_INPUT="$val" ;;
       pr) PR_ENABLED="$val" ;;
       pr_yml) PR_YML="$val" ;;
       pr_draft) PR_DRAFT="$val" ;;
@@ -453,11 +489,35 @@ if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
     exit 1
   fi
 
-  WORKTREE_OUTPUT="$("$WORKTREE_SCRIPT" \
-    --repo "$TARGET_DIR" \
-    --run-id "$RUN_ID" \
-    --job-name "$NAME" \
-    --worktree-root "$RUNS_DIR")"
+  WORKTREE_ARGS=(
+    --repo "$TARGET_DIR"
+    --run-id "$RUN_ID"
+    --job-name "$NAME"
+    --worktree-root "$RUNS_DIR"
+  )
+
+  if [[ "$WORKTREE_PR" == "true" || "$WORKTREE_PR" == "1" ]]; then
+    WORKTREE_SCRIPT="$ROOT_DIR/core/create_pr_worktree.sh"
+    if [[ ! -x "$WORKTREE_SCRIPT" ]]; then
+      echo "create_pr_worktree.sh not found: $WORKTREE_SCRIPT" >&2
+      exit 1
+    fi
+    PR_REF="${ONESHOT_PR:-}"
+    if [[ -z "$PR_REF" && -n "$WORKTREE_PR_INPUT" ]]; then
+      if input_val="$(get_input_value "$WORKTREE_PR_INPUT")"; then
+        if input_path="$(resolve_input_path "$input_val")"; then
+          PR_REF="$(head -n 1 "$input_path" | tr -d '\r')"
+        fi
+      fi
+    fi
+    if [[ -z "$PR_REF" ]]; then
+      echo "ONESHOT_PR or worktree_pr_input is required for pr worktree" >&2
+      exit 1
+    fi
+    WORKTREE_ARGS+=(--pr "$PR_REF")
+  fi
+
+  WORKTREE_OUTPUT="$("$WORKTREE_SCRIPT" "${WORKTREE_ARGS[@]}")"
   emit "$WORKTREE_OUTPUT"
 
   WORKTREE_DIR="$(printf '%s\n' "$WORKTREE_OUTPUT" | awk -F= '/^worktree_dir=/{print $2}' | tail -n 1)"
