@@ -1,10 +1,12 @@
 # ワークフロー
 
 ## 関連
-- 具体的な利用手順は `docs/core/09-user-workflow.md` を参照。
+- 導入手順は `docs/user/01-setup.md` を参照。
+- 具体的な利用手順は `docs/user/02-user-workflow.md` を参照。
+- ジョブ作成・導入は `docs/user/03-job-setup.md` を参照。
 
 ## 標準フロー（ハッピーパス）
-1. `ONESHOT_AGENT_ROOT` を設定します。
+1. `ONESHOT_AGENT_ROOT` を設定します（導入手順は `docs/user/01-setup.md` を参照）。
 2. prompt か job spec を用意します。
 3. 必要なら `ONESHOT_PROJECT_ROOT` を設定します。
 4. `core/run_oneshot.sh --job ...` を実行します。

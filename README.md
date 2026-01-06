@@ -22,6 +22,7 @@ Codex CLI を1回実行し、ログと成果物を残すハーネスです。
 前提: `codex` と `jq` と `gh` が PATH にあります。
 前提: `gh auth login` 済み。
 前提: `ONESHOT_AGENT_ROOT` に本リポジトリを設定します。
+導入手順は `docs/user/01-setup.md` を参照してください。
 
 ```bash
 export ONESHOT_AGENT_ROOT="$(pwd)"
@@ -66,7 +67,10 @@ make mode-planning 調査してIssue化したい内容
 - docs/core/adr/0001-record-architecture-decisions.md
 - docs/core/07-issue-workflow.md
 - docs/core/08-modes.md
-- docs/core/09-user-workflow.md
+- docs/user/README.md
+- docs/user/01-setup.md
+- docs/user/02-user-workflow.md
+- docs/user/03-job-setup.md
 
 ## 問い合わせ / Issue
 GitHub Issue を利用してください。

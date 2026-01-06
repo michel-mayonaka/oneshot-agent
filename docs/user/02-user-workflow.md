@@ -1,20 +1,12 @@
 # ハーネス利用者向けワークフロー
 
 ## 対象
-- ハーネスを使って Issue 作成・作業実行・PR 作成を行う人向け。
-- これらの作業は全てmakeコマンドを通してのみ行う。
+- planning-mode から PR マージまでのフローを扱う。
+- これらの作業は全て make コマンドを通してのみ行う。
 
-## 導入方法
-1. 動作確認 OS は macOS のみ（mac 前提で運用する）。
-2. `codex` と `jq` と `gh` を PATH に用意する。
-3. `gh auth login` を済ませる。
-3. `ONESHOT_AGENT_ROOT` を本リポジトリに設定する。
-4. 対象リポジトリが別の場合は `ONESHOT_PROJECT_ROOT` を設定する。
-
-```bash
-export ONESHOT_AGENT_ROOT="/path/to/oneshot-agent"
-export ONESHOT_PROJECT_ROOT="/path/to/target-repo" # 任意
-```
+## スコープ外
+- 導入手順（環境準備・セットアップ）
+- 新しいジョブの作成と導入（`docs/user/03-job-setup.md` を参照）
 
 ## 運用方法
 ## 1. planning-mode で Issue を作成する
@@ -60,16 +52,9 @@ make pr-review-fix PR=123
 - fork PR などで push 権限がない場合は「要確認」として止まる。
 - 乖離が大きい場合は Issue 作成からやり直すのを推奨。
 
-## ex. 新しいジョブを作成する
-- 定型で行わせる作業がある場合はジョブ化を行い、CIなどで回す形にする
-- 依頼内容を `inputs/job-request.md` などに用意する。
-- 実行例:
-```bash
-make create-run-def-job CREATE_RUN_DEF_JOB_REQUEST=inputs/job-request.md
-```
-- 入力が不足している場合は質問のみを返し、リポジトリ変更は行われない。
-
 ## 関連ドキュメント
 - docs/core/04-workflow.md
 - docs/core/07-issue-workflow.md
 - docs/core/08-modes.md
+- docs/user/01-setup.md
+- docs/user/03-job-setup.md
