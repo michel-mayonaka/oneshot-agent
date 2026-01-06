@@ -57,6 +57,7 @@ make mode-planning 調査してIssue化したい内容
 - docs/core/adr/0001-record-architecture-decisions.md
 - docs/core/07-issue-workflow.md
 - docs/core/08-modes.md
+- docs/core/09-user-workflow.md
 
 ## 問い合わせ / Issue
 GitHub Issue を利用してください。

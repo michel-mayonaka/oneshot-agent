@@ -27,4 +27,4 @@ prompt_text: |
 skills:
   - skills/optional/issue-template.md
 model: gpt-5.2-codex
-thinking: medium
+thinking: high
