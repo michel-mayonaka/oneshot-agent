@@ -41,9 +41,15 @@ make issue-apply ISSUE_FILE=inputs/issue.yml
 - `issue-apply` ジョブは worktree 上で作業し、差分があれば PR を作成する。
 - PR 作成には `gh` と `git push` が必要（認証や権限に注意）。
 
-## PR にレビューコメントをつけて修正させる（準備中）
-- いまはジョブ未整備のため手動運用。
-- レビュー内容を issue.yml に反映して再実行するか、乖離が大きい場合は Issue 作成からやり直すのを推奨。
+## PR にレビューコメントをつけて修正させる
+- GitHub 上でレビューコメントを付けたあとに実行する。
+- 実行例（PR番号またはURL）:
+```bash
+make pr-review-fix PR=123
+```
+- `pr-review-fix` は PR 情報とレビューコメントを取得し、PR の head ブランチに対して修正→push まで行う。
+- fork PR などで push 権限がない場合は「要確認」として止まる。
+- 乖離が大きい場合は Issue 作成からやり直すのを推奨。
 
 ## 新しいジョブを作成する
 - 依頼内容を `inputs/job-request.md` などに用意する。

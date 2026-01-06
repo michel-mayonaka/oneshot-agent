@@ -1,5 +1,8 @@
 # ワークフロー
 
+## 関連
+- 具体的な利用手順は `docs/core/09-user-workflow.md` を参照。
+
 ## 標準フロー（ハッピーパス）
 1. `ONESHOT_AGENT_ROOT` を設定します。
 2. prompt か job spec を用意します。
