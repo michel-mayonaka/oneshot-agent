@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: doc-audit-fix issue-create issue-apply mode-planning doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
+.PHONY: doc-audit-fix issue-create issue-apply pr-review-fix mode-planning doc-reference-update word-lookup create-run-def-job test test-doc test-shellspec
 
 PROJECT_ROOT ?= $(CURDIR)
 DOC_AUDIT_FIX_SPEC ?= run-defs/jobs/doc-audit-fix.yml
@@ -10,11 +10,13 @@ PLANNING_MODE_SPEC ?= run-defs/modes/planning.yml
 DOC_REFERENCE_UPDATE_SPEC ?= run-defs/jobs/doc-reference-update.yml
 WORD_LOOKUP_SPEC ?= run-defs/jobs/word-lookup.yml
 CREATE_RUN_DEF_JOB_SPEC ?= run-defs/jobs/create-run-def-job.yml
+PR_REVIEW_FIX_SPEC ?= run-defs/jobs/pr-review-fix.yml
 WORDS ?=
 CREATE_RUN_DEF_JOB_REQUEST ?=
 ISSUE_REQUEST ?=
 ISSUE ?=
 ISSUE_FILE ?=
+PR ?=
 PLAN_REQUEST ?=
 PLAN_TEXT ?=
 MODE_PLANNING_TEXT :=
@@ -61,6 +63,22 @@ issue-apply:
 		ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/fetch_issue.sh --repo "$(PROJECT_ROOT)" --issue "$(ISSUE)" --out "$$ISSUE_PATH"; \
 	fi; \
 	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(ISSUE_APPLY_SPEC) --input issue=$$ISSUE_PATH; \
+	rm -rf $$TMP_DIR
+
+pr-review-fix:
+	@TMP_DIR=$$(mktemp -d); \
+	PR_REF="$(PR)"; \
+	if [[ -z "$$PR_REF" ]]; then \
+		echo "PR is required (e.g. make pr-review-fix PR=123 or PR=https://github.com/.../pull/123)"; \
+		rm -rf $$TMP_DIR; \
+		exit 1; \
+	fi; \
+	PR_PATH="$$TMP_DIR/pr.txt"; \
+	printf '%s\n' "$$PR_REF" > "$$PR_PATH"; \
+	PR_INFO_PATH="$$TMP_DIR/pr.yml"; \
+	REVIEW_PATH="$$TMP_DIR/review.txt"; \
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/fetch_pr_review.sh --repo "$(PROJECT_ROOT)" --pr "$$PR_REF" --pr-out "$$PR_INFO_PATH" --review-out "$$REVIEW_PATH"; \
+	ONESHOT_PROJECT_ROOT="$(PROJECT_ROOT)" ONESHOT_AGENT_ROOT="$(PROJECT_ROOT)" bash core/run_oneshot.sh --job $(PR_REVIEW_FIX_SPEC) --input pr=$$PR_PATH --input pr_info=$$PR_INFO_PATH --input review=$$REVIEW_PATH; \
 	rm -rf $$TMP_DIR
 
 mode-planning:
