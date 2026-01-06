@@ -1,0 +1,28 @@
+name: pr-review-fix
+prompt_text: |
+  以下のPR情報とレビューコメントを参照して、レビュー指摘に対応してください。
+
+  PR情報:
+  ```
+  __INPUT_PR_INFO__
+  ```
+
+  レビューコメント:
+  ```
+  __INPUT_REVIEW__
+  ```
+
+  ルール:
+  - レビュー対応→push（PR head ブランチ）までを実施すること。
+  - fork PR 等で push 権限がない場合は「要確認」と明記し、無理に push しないこと。
+  - 不明点があれば「要確認」として明記する。
+  - 変更対象は依頼内容に応じて判断する（不要な変更はしない）。
+  - worklogs/ には変更を加えない。
+  - 最後に Markdown でレポートを出力（概要/変更点/確認コマンド）。
+worktree: true
+worktree_pr: true
+worktree_pr_input: pr
+model: gpt-5.2-codex
+thinking: medium
+# target_dir: /path/to/project
+# disable_global_skills: true
