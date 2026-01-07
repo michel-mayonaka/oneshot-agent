@@ -660,6 +660,21 @@ if [[ -n "$RUN_DIR" ]]; then
   done
 fi
 
+# PR worktree の push（レビュー修正向け）
+if [[ "$WORKTREE_PR" == "true" || "$WORKTREE_PR" == "1" ]]; then
+  if [[ -z "$WORKTREE_DIR" ]]; then
+    echo "worktree_dir not found; cannot push" >&2
+    exit 1
+  fi
+  PUSH_SCRIPT="$ROOT_DIR/core/push_worktree.sh"
+  if [[ ! -x "$PUSH_SCRIPT" ]]; then
+    echo "push_worktree.sh not found: $PUSH_SCRIPT" >&2
+    exit 1
+  fi
+  PUSH_OUTPUT="$("$PUSH_SCRIPT" --worktree "$WORKTREE_DIR" --commit-message "${NAME}: update (${RUN_ID})")"
+  emit "$PUSH_OUTPUT"
+fi
+
 # PR下書きYAML生成（有効時のみ）
 if [[ "$PR_YML" == "true" || "$PR_YML" == "1" ]]; then
   if [[ -z "$RUN_DIR" ]]; then

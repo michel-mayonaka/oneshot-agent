@@ -152,6 +152,13 @@ echo "worktree_dir=$WORKTREE_DIR"
 MOCK
     chmod +x "$AGENT/core/create_pr_worktree.sh"
 
+    cat <<'MOCK' > "$AGENT/core/push_worktree.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+echo "push_worktree_called=1"
+MOCK
+    chmod +x "$AGENT/core/push_worktree.sh"
+
     printf '123' > "$AGENT/inputs/pr.txt"
 
     JOB="$TMP_DIR/job.yml"
@@ -164,6 +171,7 @@ YAML
     When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB" --input pr=inputs/pr.txt
     The status should be success
     The output should include "create_pr_worktree_called=1"
+    The output should include "push_worktree_called=1"
   End
 
   It "runs worktree and pr_yml flow"

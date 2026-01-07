@@ -65,18 +65,44 @@ fi
 
 PR_JSON="$(
   cd "$REPO_DIR" && GH_PROMPT_DISABLED=1 gh pr view "$PR_REF" \
-    --json number,title,body,url,author,baseRefName,baseRepository,headRefName,headRefOid,headRepository,headRepositoryOwner
+    --json number,title,body,url,author,baseRefName,headRefName,headRefOid,headRepository,headRepositoryOwner
 )"
 
+REMOTE_URL="$(
+  git -C "$REPO_DIR" remote get-url origin 2>/dev/null || true
+)"
+if [[ -z "$REMOTE_URL" ]]; then
+  FIRST_REMOTE="$(git -C "$REPO_DIR" remote | head -n 1 || true)"
+  if [[ -n "$FIRST_REMOTE" ]]; then
+    REMOTE_URL="$(git -C "$REPO_DIR" remote get-url "$FIRST_REMOTE" 2>/dev/null || true)"
+  fi
+fi
+
 read -r PR_NUMBER BASE_OWNER BASE_REPO < <(
-  PR_JSON="$PR_JSON" python3 - <<'PY'
+  PR_JSON="$PR_JSON" REMOTE_URL="$REMOTE_URL" python3 - <<'PY'
 import json
 import os
+from urllib.parse import urlparse
+
+def parse_owner_repo(url: str) -> tuple[str, str]:
+    if not url:
+        return ("", "")
+    if "@" in url and ":" in url and not url.startswith(("http://", "https://")):
+        path = url.split(":", 1)[1]
+    else:
+        path = urlparse(url).path
+    path = path.strip("/")
+    if path.endswith(".git"):
+        path = path[:-4]
+    parts = path.split("/")
+    if len(parts) >= 2:
+        return (parts[0], parts[1])
+    return ("", "")
 
 pr = json.loads(os.environ.get("PR_JSON", "{}"))
-base_repo = pr.get("baseRepository") or {}
-base_owner = (base_repo.get("owner") or {}).get("login", "")
-base_name = base_repo.get("name", "")
+base_owner, base_name = parse_owner_repo(pr.get("url", ""))
+if not base_owner or not base_name:
+    base_owner, base_name = parse_owner_repo(os.environ.get("REMOTE_URL", ""))
 number = pr.get("number", "")
 print(f"{number}\t{base_owner}\t{base_name}")
 PY
@@ -95,18 +121,43 @@ REVIEWS_JSON="$(
   cd "$REPO_DIR" && GH_PROMPT_DISABLED=1 gh api --paginate "repos/$BASE_OWNER/$BASE_REPO/pulls/$PR_NUMBER/reviews"
 )"
 
-PR_JSON="$PR_JSON" COMMENTS_JSON="$COMMENTS_JSON" REVIEWS_JSON="$REVIEWS_JSON" \
+ISSUE_COMMENTS_JSON="$(
+  cd "$REPO_DIR" && GH_PROMPT_DISABLED=1 gh api --paginate "repos/$BASE_OWNER/$BASE_REPO/issues/$PR_NUMBER/comments"
+)"
+
+PR_JSON="$PR_JSON" COMMENTS_JSON="$COMMENTS_JSON" REVIEWS_JSON="$REVIEWS_JSON" ISSUE_COMMENTS_JSON="$ISSUE_COMMENTS_JSON" \
+  BASE_OWNER="$BASE_OWNER" BASE_REPO="$BASE_REPO" \
   python3 - "$PR_OUT" "$REVIEW_OUT" <<'PY'
 import json
 import os
 import sys
 from datetime import datetime
+from urllib.parse import urlparse
 
 pr_out = sys.argv[1]
 review_out = sys.argv[2]
 pr = json.loads(os.environ.get("PR_JSON", "{}"))
 comments = json.loads(os.environ.get("COMMENTS_JSON", "[]"))
 reviews = json.loads(os.environ.get("REVIEWS_JSON", "[]"))
+issue_comments = json.loads(os.environ.get("ISSUE_COMMENTS_JSON", "[]"))
+env_base_owner = os.environ.get("BASE_OWNER", "")
+env_base_repo = os.environ.get("BASE_REPO", "")
+
+
+def parse_owner_repo(url: str) -> tuple[str, str]:
+    if not url:
+        return ("", "")
+    if "@" in url and ":" in url and not url.startswith(("http://", "https://")):
+        path = url.split(":", 1)[1]
+    else:
+        path = urlparse(url).path
+    path = path.strip("/")
+    if path.endswith(".git"):
+        path = path[:-4]
+    parts = path.split("/")
+    if len(parts) >= 2:
+        return (parts[0], parts[1])
+    return ("", "")
 
 
 def quote_scalar(value: str) -> str:
@@ -124,9 +175,9 @@ lines.append(f"number: {pr.get('number', '')}")
 lines.append(f"title: {quote_scalar((pr.get('title') or '').strip())}")
 lines.append(f"url: {quote_scalar(pr.get('url', ''))}")
 lines.append(f"author: {quote_scalar(((pr.get('author') or {}).get('login')) or '')}")
-base_repo = pr.get("baseRepository") or {}
-base_owner = (base_repo.get("owner") or {}).get("login", "")
-base_name = base_repo.get("name", "")
+base_owner, base_name = parse_owner_repo(pr.get("url", ""))
+if not base_owner or not base_name:
+    base_owner, base_name = (env_base_owner, env_base_repo)
 lines.append(f"base_repo: {quote_scalar(f'{base_owner}/{base_name}'.strip('/'))}")
 lines.append(f"base_ref: {quote_scalar(pr.get('baseRefName', ''))}")
 head_repo = pr.get("headRepository") or {}
@@ -183,6 +234,22 @@ if reviews:
         submitted = fmt_dt(r.get("submitted_at", ""))
         body = (r.get("body") or "").rstrip()
         review_lines.append(f"- {state} / {user} / {submitted}")
+        if body:
+            for bl in body.splitlines():
+                review_lines.append(f"  {bl}")
+        else:
+            review_lines.append("  (本文なし)")
+else:
+    review_lines.append("- （なし）")
+
+review_lines.append("")
+review_lines.append("## PRコメント（会話）")
+if issue_comments:
+    for c in issue_comments:
+        user = (c.get("user") or {}).get("login", "")
+        created = fmt_dt(c.get("created_at", ""))
+        body = (c.get("body") or "").rstrip()
+        review_lines.append(f"- {user} / {created}")
         if body:
             for bl in body.splitlines():
                 review_lines.append(f"  {bl}")
