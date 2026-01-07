@@ -39,8 +39,7 @@ prompt_text: |
   - 確認コマンドは「実行した場合のみ」記載し、未実行なら「未実行」と明記する。
   - worklogs/ には変更を加えない。
   - 依頼内容の確認や質問はせず、レポート本文から書き始めること。
-worktree: true
-pr: true
+job_type: worktree_and_pr
 model: gpt-5.2-codex
 thinking: medium
 # target_dir: /path/to/project

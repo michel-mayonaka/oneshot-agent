@@ -48,6 +48,124 @@ YAML
     The contents of file "$LOG_PATH" should include "Hello world"
   End
 
+  It "fails when job_type and legacy keys are mixed"
+    JOB="$TMP_DIR/job.yml"
+    cat <<'YAML' > "$JOB"
+name: test
+prompt_text: "hello"
+job_type: worktree
+worktree: true
+YAML
+    When run bash core/run_oneshot.sh --job "$JOB"
+    The status should be failure
+    The stderr should include "job_type cannot be used with"
+  End
+
+  It "supports legacy worktree flag without job_type"
+    AGENT="$TMP_DIR/agent"
+    mkdir -p "$AGENT/core"
+
+    cat <<'MOCK' > "$AGENT/core/oneshot_exec.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
+RUNS_DIR="${ONESHOT_RUNS_DIR:-$PWD/worklogs}"
+RUN_ID="${ONESHOT_RUN_ID:-run}"
+RUN_DIR="$RUNS_DIR/$RUN_ID"
+mkdir -p "$RUN_DIR/inputs" "$RUN_DIR/logs" "$RUN_DIR/prompts"
+
+echo "run_dir=$RUN_DIR"
+MOCK
+    chmod +x "$AGENT/core/oneshot_exec.sh"
+
+    cat <<'MOCK' > "$AGENT/core/create_worktree.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+exit 1
+MOCK
+    chmod +x "$AGENT/core/create_worktree.sh"
+
+    JOB="$TMP_DIR/job.yml"
+    cat <<'YAML' > "$JOB"
+name: test
+prompt_text: "hello"
+worktree: false
+YAML
+
+    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
+    The status should be success
+  End
+
+  It "maps job_type pr_worktree to PR worktree"
+    AGENT="$TMP_DIR/agent"
+    mkdir -p "$AGENT/core" "$AGENT/inputs"
+
+    cat <<'MOCK' > "$AGENT/core/oneshot_exec.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
+RUNS_DIR="${ONESHOT_RUNS_DIR:-$PWD/worklogs}"
+RUN_ID="${ONESHOT_RUN_ID:-run}"
+RUN_DIR="$RUNS_DIR/$RUN_ID"
+mkdir -p "$RUN_DIR/inputs" "$RUN_DIR/logs" "$RUN_DIR/prompts"
+
+echo "run_dir=$RUN_DIR"
+MOCK
+    chmod +x "$AGENT/core/oneshot_exec.sh"
+
+    cat <<'MOCK' > "$AGENT/core/create_pr_worktree.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
+WORKTREE_ROOT=""
+RUN_ID=""
+PR_REF=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --worktree-root)
+      WORKTREE_ROOT="$2"
+      shift 2
+      ;;
+    --run-id)
+      RUN_ID="$2"
+      shift 2
+      ;;
+    --pr)
+      PR_REF="$2"
+      shift 2
+      ;;
+    *)
+      shift 1
+      ;;
+  esac
+done
+
+if [[ -z "$WORKTREE_ROOT" || -z "$RUN_ID" || -z "$PR_REF" ]]; then
+  exit 1
+fi
+
+WORKTREE_DIR="$WORKTREE_ROOT/$RUN_ID/worktree"
+mkdir -p "$WORKTREE_DIR"
+
+echo "create_pr_worktree_called=1"
+echo "worktree_dir=$WORKTREE_DIR"
+MOCK
+    chmod +x "$AGENT/core/create_pr_worktree.sh"
+
+    printf '123' > "$AGENT/inputs/pr.txt"
+
+    JOB="$TMP_DIR/job.yml"
+    cat <<'YAML' > "$JOB"
+name: test
+prompt_text: "hello"
+job_type: pr_worktree
+YAML
+
+    When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB" --input pr=inputs/pr.txt
+    The status should be success
+    The output should include "create_pr_worktree_called=1"
+  End
+
   It "runs worktree and pr_yml flow"
     AGENT="$TMP_DIR/agent"
     mkdir -p "$AGENT/core" "$AGENT/worklogs"

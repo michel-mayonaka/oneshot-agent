@@ -13,6 +13,7 @@ YAML job spec (flat):
     - doc-audit
     # or file paths: skills/optional/doc-audit.md
   target_dir: /path/to/project
+  job_type: worktree_and_pr
   worktree: true
   worktree_pr: true
   worktree_pr_input: pr
@@ -32,6 +33,8 @@ Notes:
 - pr_yml は worktree: true が前提（worklogs/<job>/<run_id>/worktree を参照）。
 - thinking は Codex CLI の reasoning.effort に渡される。
 - ONESHOT_WORKLOGS_ROOT が指定されている場合、worklogs のルートとして使われます。
+- job_type を指定する場合、worktree/pr/worktree_pr/worktree_pr_input は併用不可。
+- job_type: no_worktree | worktree | worktree_and_pr | pr_worktree
 USAGE
 }
 
@@ -151,6 +154,12 @@ ISSUE_ENABLED=""
 DISABLE_GLOBAL=""
 MODEL=""
 THINKING=""
+JOB_TYPE=""
+JOB_TYPE_SET=0
+WORKTREE_SET=0
+WORKTREE_PR_SET=0
+WORKTREE_PR_INPUT_SET=0
+PR_SET=0
 SKILLS=()
 SKILL_FILES=()
 INPUT_KEYS=()
@@ -218,10 +227,11 @@ while IFS= read -r line || [[ -n "$line" ]]; do
         fi
         ;;
       target_dir) TARGET_DIR="$val" ;;
-      worktree) USE_WORKTREE="$val" ;;
-      worktree_pr) WORKTREE_PR="$val" ;;
-      worktree_pr_input) WORKTREE_PR_INPUT="$val" ;;
-      pr) PR_ENABLED="$val" ;;
+      job_type) JOB_TYPE="$val"; JOB_TYPE_SET=1 ;;
+      worktree) USE_WORKTREE="$val"; WORKTREE_SET=1 ;;
+      worktree_pr) WORKTREE_PR="$val"; WORKTREE_PR_SET=1 ;;
+      worktree_pr_input) WORKTREE_PR_INPUT="$val"; WORKTREE_PR_INPUT_SET=1 ;;
+      pr) PR_ENABLED="$val"; PR_SET=1 ;;
       pr_yml) PR_YML="$val" ;;
       pr_draft) PR_DRAFT="$val" ;;
       issue) ISSUE_ENABLED="$val" ;;
@@ -233,6 +243,58 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   fi
 
   done < "$JOB_SPEC"
+
+# job_type の検証と展開
+if [[ $JOB_TYPE_SET -eq 1 ]]; then
+  conflicts=()
+  if [[ $WORKTREE_SET -eq 1 ]]; then
+    conflicts+=("worktree")
+  fi
+  if [[ $WORKTREE_PR_SET -eq 1 ]]; then
+    conflicts+=("worktree_pr")
+  fi
+  if [[ $WORKTREE_PR_INPUT_SET -eq 1 ]]; then
+    conflicts+=("worktree_pr_input")
+  fi
+  if [[ $PR_SET -eq 1 ]]; then
+    conflicts+=("pr")
+  fi
+  if [[ ${#conflicts[@]} -gt 0 ]]; then
+    echo "job_type cannot be used with: ${conflicts[*]}" >&2
+    exit 1
+  fi
+
+  case "$JOB_TYPE" in
+    no_worktree)
+      USE_WORKTREE="false"
+      PR_ENABLED="false"
+      WORKTREE_PR="false"
+      WORKTREE_PR_INPUT=""
+      ;;
+    worktree)
+      USE_WORKTREE="true"
+      PR_ENABLED="false"
+      WORKTREE_PR="false"
+      WORKTREE_PR_INPUT=""
+      ;;
+    worktree_and_pr)
+      USE_WORKTREE="true"
+      PR_ENABLED="true"
+      WORKTREE_PR="false"
+      WORKTREE_PR_INPUT=""
+      ;;
+    pr_worktree)
+      USE_WORKTREE="true"
+      PR_ENABLED="false"
+      WORKTREE_PR="true"
+      WORKTREE_PR_INPUT="pr"
+      ;;
+    *)
+      echo "Unknown job_type: $JOB_TYPE" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 # name が無い場合はファイル名から推定
 if [[ -z "$NAME" ]]; then

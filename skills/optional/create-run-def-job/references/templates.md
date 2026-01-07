@@ -6,7 +6,7 @@
 name: <job-name>
 prompt_text: |
   <task instructions>
-worktree: false
+job_type: no_worktree
 # target_dir: /path/to/project
 # disable_global_skills: true
 ```
@@ -20,7 +20,7 @@ prompt_text: |
   必須出力: Markdown レポート（概要 / 調査プロセス / 不整合一覧 / 根拠詳細）。
 skills:
   - skills/optional/doc-audit.md
-worktree: false
+job_type: no_worktree
 ```
 
 ## Fix (修正)
@@ -33,8 +33,7 @@ prompt_text: |
   ```
   __INPUT_AUDIT_REPORT__
   ```
-worktree: true
-pr: true
+job_type: worktree_and_pr
 ```
 
 ## Dictionary (辞書/用語)
@@ -47,7 +46,7 @@ prompt_text: |
   ```
   __INPUT_WORDS__
   ```
-worktree: false
+job_type: no_worktree
 ```
 
 ## Research (調査)
@@ -56,7 +55,7 @@ worktree: false
 name: <job-name>
 prompt_text: |
   指定テーマについて調査し、要点・根拠・不確実性をまとめてください。
-worktree: false
+job_type: no_worktree
 ```
 
 ## Implementation (実装)
@@ -72,8 +71,7 @@ prompt_text: |
   - <files or areas>
   期待する出力:
   - <summary / tests>
-worktree: true
-pr: true
+job_type: worktree_and_pr
 ```
 
 # Makefile Target Template
@@ -92,3 +90,4 @@ pr: true
 # Notes
 
 - `skills:` には **参照したいファイルをすべて列挙** する（本文内で参照があっても省略しない）。
+- job_type の値: no_worktree / worktree / worktree_and_pr / pr_worktree
