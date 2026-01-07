@@ -19,9 +19,7 @@ prompt_text: |
   - 変更対象は依頼内容に応じて判断する（不要な変更はしない）。
   - worklogs/ には変更を加えない。
   - 最後に Markdown でレポートを出力（概要/変更点/確認コマンド）。
-worktree: true
-worktree_pr: true
-worktree_pr_input: pr
+job_type: pr_worktree
 model: gpt-5.2-codex
 thinking: medium
 # target_dir: /path/to/project

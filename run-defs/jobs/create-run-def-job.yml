@@ -8,7 +8,7 @@ prompt_text: |
   ```
 
   要件:
-  - 入力から job の名前 / 種別（監査・修正・辞書・調査・実装） / 入力 / 出力 / worktree / pr / skills / model / thinking などを判断する。
+  - 入力から job の名前 / 種別（監査・修正・辞書・調査・実装） / 入力 / 出力 / job_type / skills / model / thinking などを判断する。
   - 不足情報がある場合は「質問」セクションに列挙し、リポジトリの変更は行わない。
   - 情報が十分な場合は以下を行う:
     1) `run-defs/jobs/<job-name>.yml` を作成
@@ -20,8 +20,7 @@ prompt_text: |
 skills:
   - skills/optional/create-run-def-job/SKILL.md
   - skills/optional/create-run-def-job/references/templates.md
-worktree: true
-pr: true
+job_type: worktree_and_pr
 model: gpt-5.2-codex
 thinking: medium
 # target_dir: /path/to/project

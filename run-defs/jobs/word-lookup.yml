@@ -19,7 +19,7 @@ prompt_text: |
   - 推測が混じる場合は不確実性に理由を書く。
   - 入力が空の場合は理由を明記して終了する。
   - 依頼内容の確認質問はしない。
-worktree: false
+job_type: no_worktree
 model: gpt-5.2-codex
 thinking: medium
 # target_dir: /path/to/project

@@ -18,6 +18,7 @@ prompt_text: |
   - 複数 issue が妥当な場合は分割し、個別に issue.yml を出力。
   - 最後に Markdown で簡潔なレポートを出力（作成した issue.yml の一覧を含める）。
 issue: true
+job_type: worktree
 skills:
   - skills/optional/issue-template.md
 model: gpt-5.2-codex

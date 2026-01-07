@@ -13,8 +13,7 @@ prompt_text: |
   - 重要な仕様 / 入出力 / 設定 / CLI / 環境変数があれば反映する。
   - worklogs/ には変更を加えない。
   - 最後に変更内容のサマリ（変更ファイル一覧 / 要確認事項）をMarkdownでまとめる。
-worktree: true
-pr: true
+job_type: worktree_and_pr
 model: gpt-5.2-codex
 thinking: medium
 # target_dir: /path/to/project

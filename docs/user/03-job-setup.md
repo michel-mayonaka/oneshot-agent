@@ -14,7 +14,7 @@
 - 種別（監査・修正・辞書・調査・実装）
 - 入力の有無（必要なら input key とファイル）
 - 出力物の想定（report など）
-- worktree / PR の要否
+- job_type（worktree/PR の扱い）
 - 使う skills（必要なら）
 - model / thinking（必要なら）
 
@@ -25,12 +25,17 @@
 種別: 調査
 入力: あり（input key: foo, ファイル: inputs/foo.md）
 出力: report.md に要約
-worktree: false
-pr: false
+job_type: no_worktree
 skills: なし
 model: 既定でよい
 thinking: 既定でよい
 ```
+
+job_type の値:
+- no_worktree: worktree=false, pr=false, worktree_pr=false
+- worktree: worktree=true, pr=false, worktree_pr=false
+- worktree_and_pr: worktree=true, pr=true, worktree_pr=false
+- pr_worktree: worktree=true, worktree_pr=true, worktree_pr_input=pr, pr=false
 
 ## 作成手順
 1. 依頼内容を `inputs/job-request.md` にまとめる。
