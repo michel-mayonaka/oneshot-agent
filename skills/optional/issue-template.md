@@ -19,6 +19,7 @@
 - 配列は以下のいずれかで記述する。
   - 1行ずつ `-` で列挙
   - 1行のカンマ区切り（必要な場合のみ）
+- 既存Issueを参照する場合は `issue_url` または `issue_number` を付ける（PRの closing keyword に使用）。
 
 issue.yml 例:
 ```
@@ -43,4 +44,5 @@ labels:
 assignees:
   - tkg-engineer
 milestone: v1.0
+issue_url: "https://github.com/owner/repo/issues/123"
 ```

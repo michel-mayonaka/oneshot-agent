@@ -6,6 +6,7 @@
 
 ## Issue フォーマット（issue.yml）
 必須キーは `title` と `body` です。その他は必要な場合のみ指定します。
+既存Issueを参照する場合は `issue_url` または `issue_number` を追加します（PRの自動Closeに利用）。
 
 ```yaml
 title: "短いタイトル"
@@ -26,6 +27,7 @@ labels:
 assignees:
   - username
 milestone: "v1.2"
+issue_url: "https://github.com/owner/repo/issues/123"
 ```
 
 ### 具体例
@@ -48,6 +50,7 @@ labels:
 assignees:
   - tkg-engineer
 milestone: "v1.0"
+issue_url: "https://github.com/owner/repo/issues/123"
 ```
 
 複数 Issue が必要な場合は、`issue.yml` を複数ファイルに分割します。
@@ -60,6 +63,7 @@ milestone: "v1.0"
 ## 参照フロー
 1. `core/fetch_issue.sh` で Issue を `issue.yml` へ取得します。
 2. `run-defs/jobs/issue-apply.yml` に `--input issue=...` で渡して実行します。
+   - `fetch_issue.sh` で `issue_url` が追加され、PR作成時の closing keyword に使われます。
 
 ## 関連スクリプト
 - `core/create_issue.sh`: issue.yml から Issue を作成（要 gh）。

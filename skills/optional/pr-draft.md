@@ -27,6 +27,9 @@ description: Generate PR title and body from the performed changes and include t
 
 # 確認コマンド
 - <実行したコマンド。未実行なら「未実行」>
+
+# 関連Issue
+- <Closes #123 または なし>
 ```
 
 注意:
@@ -34,6 +37,7 @@ description: Generate PR title and body from the performed changes and include t
 - タイトル行は必ず「タイトル:」で始める。
 - 本文は「本文:」の次の行から書く。
 - 本文は必ず ```markdown のコードブロックで囲み、この中の見出しは「#」を使う。
-- 見出しと項目の順序を変えない（概要→変更点→影響範囲→確認コマンド）。
+- 見出しと項目の順序を変えない（概要→変更点→影響範囲→確認コマンド→関連Issue）。
 - 本文にURLが必要なら、文章内に直接書かずプレーンテキストで記載する。
 - ジョブ名が不明な場合は「不明」と書く。
+- Issue番号があれば「Closes #<番号>」を使い、なければ「なし」。
