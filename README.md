@@ -58,6 +58,22 @@ make mode-planning PLAN_REQUEST=inputs/plan-request.md
 make mode-planning 調査してIssue化したい内容
 ```
 
+## ClaudeCode (slash command) での利用
+
+ClaudeCode上で対話的にIssue作成を行う場合:
+
+```
+/issue-planning
+
+依頼内容: ドキュメントの更新とテストの追加
+```
+
+ClaudeCode用のslash commandは `.claude/commands/` に定義されています。
+codex CLI版との主な違い:
+- モデル: ClaudeCode (Sonnet等) を使用
+- 対話的: ユーザーとの対話でIssue内容を調整
+- 既存スクリプト: `core/create_issue.sh` を活用
+
 ## ドキュメント
 - docs/core/01-purpose.md
 - docs/core/02-invariants.md
