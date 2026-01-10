@@ -26,6 +26,10 @@ jobs:
           node-version: "20"
       - name: Install codex CLI
         run: npm i -g @openai/codex
+      - name: Configure git author
+        run: |
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
       - name: Debug codex config
         run: |
           echo "codex_version=$(codex --version || echo unknown)"
