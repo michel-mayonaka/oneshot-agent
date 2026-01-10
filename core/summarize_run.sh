@@ -5,6 +5,7 @@ RUN_DIR="${1:?usage: summarize_run.sh <run_dir>}"
 EVENTS="$RUN_DIR/logs/events.jsonl"
 TIMELOG="$RUN_DIR/logs/stderr_and_time.txt"
 PROMPT="$RUN_DIR/prompts/prompt.txt"
+PROMPT_STATS="$RUN_DIR/prompts/prompt_stats.txt"
 LASTMSG="$RUN_DIR/logs/last_message.md"
 SKILLS_USED="$RUN_DIR/prompts/skills_used.txt"
 
@@ -109,6 +110,9 @@ cat > "$OUT" <<EOF
 - tokens: in=${IN_TOKENS:-N/A}, out=${OUT_TOKENS:-N/A}, total=${TOTAL_TOKENS:-N/A}
 - skills: $( [[ -f "$SKILLS_USED" ]] && paste -sd"," "$SKILLS_USED" || echo "N/A" )
 
+## Prompt Stats / プロンプト統計
+$( [[ -f "$PROMPT_STATS" ]] && printf '```text\n%s\n```\n' "$(cat "$PROMPT_STATS")" || echo "- (missing prompt_stats.txt)" )
+
 ## Git Context / Git コンテキスト
 - branch: ${BRANCH:-N/A}
 - commit: ${COMMIT:-N/A}
@@ -134,6 +138,7 @@ $( [[ -n "$ERROR_SNIPPET" ]] && printf '```text\n%s\n```\n' "$ERROR_SNIPPET" || 
 - commands_json: $( [[ -f "$RUN_DIR/logs/commands.jsonl" ]] && echo "\`logs/commands.jsonl\`" || echo "N/A" )
 - stderr/time: $( [[ -f "$TIMELOG" ]] && echo "\`logs/stderr_and_time.txt\`" || echo "N/A" )
 - skills_used: $( [[ -f "$SKILLS_USED" ]] && echo "\`prompts/skills_used.txt\`" || echo "N/A" )
+- prompt_stats: $( [[ -f "$PROMPT_STATS" ]] && echo "\`prompts/prompt_stats.txt\`" || echo "N/A" )
 EOF
 
 echo "generated: $OUT"

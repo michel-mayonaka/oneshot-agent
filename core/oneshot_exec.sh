@@ -14,6 +14,8 @@ Usage: $(basename "$0") [-C <target_dir>] [-s skill1,skill2] <prompt.txt or prom
   ONESHOT_DISABLE_GLOBAL_SKILLS グローバルskills(global/)を無効化する場合に1を設定。
   ONESHOT_MODEL                 Codex 実行モデル（未指定時は gpt-5.2）。
   ONESHOT_THINKING              reasoning.effort に渡す thinking レベル（例: low/medium/high）。
+  ONESHOT_MAX_PROMPT_TOKENS     概算トークン数が上限超過なら Codex 実行を拒否します。
+                               概算トークン数は「prompt.txt の UTF-8 バイト数/4 の切り上げ」です。
 EOF
 }
 
@@ -211,6 +213,50 @@ set -u
   echo ""
   echo "----- USER PROMPT END -----"
 } > "$FINAL_PROMPT_FILE"
+
+# プロンプト統計（文字数/行数/概算トークン数）を保存
+PROMPT_STATS_FILE="$RUN_DIR/prompts/prompt_stats.txt"
+PROMPT_CHARS="$(wc -m < "$FINAL_PROMPT_FILE" | tr -d '[:space:]')"
+PROMPT_LINES="$(wc -l < "$FINAL_PROMPT_FILE" | tr -d '[:space:]')"
+PROMPT_UTF8_BYTES="$(wc -c < "$FINAL_PROMPT_FILE" | tr -d '[:space:]')"
+PROMPT_EST_TOKENS="$(( (PROMPT_UTF8_BYTES + 3) / 4 ))"
+{
+  echo "chars=${PROMPT_CHARS}"
+  echo "lines=${PROMPT_LINES}"
+  echo "utf8_bytes=${PROMPT_UTF8_BYTES}"
+  echo "estimated_tokens=${PROMPT_EST_TOKENS}"
+  echo "estimated_tokens_method=ceil(utf8_bytes/4) (utf8_bytes via wc -c on prompt.txt)"
+} > "$PROMPT_STATS_FILE"
+
+# 上限超過なら Codex 実行前に拒否（非ゼロ終了）
+MAX_PROMPT_TOKENS="${ONESHOT_MAX_PROMPT_TOKENS:-}"
+if [[ -n "$MAX_PROMPT_TOKENS" ]]; then
+  refuse_reason=""
+  if ! [[ "$MAX_PROMPT_TOKENS" =~ ^[0-9]+$ ]]; then
+    refuse_reason="ONESHOT_MAX_PROMPT_TOKENS must be an integer (got: ${MAX_PROMPT_TOKENS})"
+  elif (( PROMPT_EST_TOKENS > MAX_PROMPT_TOKENS )); then
+    refuse_reason="prompt token estimate exceeded limit: estimated_tokens=${PROMPT_EST_TOKENS} > limit=${MAX_PROMPT_TOKENS}"
+  fi
+
+  if [[ -n "$refuse_reason" ]]; then
+    {
+      echo "ERROR: ${refuse_reason}"
+      echo "INFO: see prompts/prompt_stats.txt for details"
+    } > "$RUN_DIR/logs/stderr_and_time.txt"
+    {
+      echo "# Refused"
+      echo ""
+      echo "${refuse_reason}"
+      echo ""
+      echo "- prompt_stats: prompts/prompt_stats.txt"
+    } > "$RUN_DIR/logs/last_message.md"
+
+    echo "run_dir=$RUN_DIR"
+    echo "target_dir=$TARGET_DIR"
+    "$SCRIPT_DIR/summarize_run.sh" "$RUN_DIR"
+    exit 2
+  fi
+fi
 
 # Codex実行オプション
 MODEL="${ONESHOT_MODEL:-gpt-5.2}"
