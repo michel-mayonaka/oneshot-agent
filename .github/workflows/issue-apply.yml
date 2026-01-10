@@ -26,6 +26,15 @@ jobs:
           node-version: "20"
       - name: Install codex CLI
         run: npm i -g @openai/codex
+      - name: Debug codex config
+        run: |
+          echo "codex_version=$(codex --version || echo unknown)"
+          echo "node_version=$(node --version)"
+          echo "npm_version=$(npm --version)"
+          if [[ -n "${CODEX_API_KEY:-}" ]]; then echo "CODEX_API_KEY=***"; else echo "CODEX_API_KEY="; fi
+          if [[ -n "${ONESHOT_MODEL:-}" ]]; then echo "ONESHOT_MODEL=$ONESHOT_MODEL"; else echo "ONESHOT_MODEL="; fi
+          echo "issue-apply model:"
+          grep -n "model:" run-defs/jobs/issue-apply.yml || true
       - name: Run issue-apply
         run: make issue-apply ISSUE=${{ inputs.issue }}
       - name: Upload worklogs artifact
