@@ -64,5 +64,13 @@ if ! git -C "$WORKTREE_DIR" rev-parse --abbrev-ref --symbolic-full-name "@{u}" >
   exit 1
 fi
 
-git -C "$WORKTREE_DIR" push
+UPSTREAM_REF="$(git -C "$WORKTREE_DIR" rev-parse --abbrev-ref --symbolic-full-name "@{u}")"
+REMOTE="${UPSTREAM_REF%%/*}"
+UPSTREAM_BRANCH="${UPSTREAM_REF#*/}"
+if [[ -z "$REMOTE" || -z "$UPSTREAM_BRANCH" ]]; then
+  echo "Invalid upstream reference: $UPSTREAM_REF" >&2
+  exit 1
+fi
+
+git -C "$WORKTREE_DIR" push "$REMOTE" "HEAD:$UPSTREAM_BRANCH"
 echo "pushed=1"
