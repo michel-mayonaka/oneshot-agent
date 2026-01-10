@@ -21,7 +21,7 @@ issue: true
 job_type: worktree
 skills:
   - skills/optional/issue-template.md
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true

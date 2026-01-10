@@ -40,7 +40,7 @@ prompt_text: |
   - worklogs/ には変更を加えない。
   - 依頼内容の確認や質問はせず、レポート本文から書き始めること。
 job_type: worktree_and_pr
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true

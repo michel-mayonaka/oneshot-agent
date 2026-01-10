@@ -11,7 +11,7 @@ Mode spec (flat):
   skills:
     - some-skill
     # or file paths: skills/optional/some-skill.md
-  model: gpt-5.2-codex
+  model: gpt-5.2
   thinking: medium
 
 Notes:

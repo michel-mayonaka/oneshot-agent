@@ -20,7 +20,7 @@ prompt_text: |
   - worklogs/ には変更を加えない。
   - 最後に Markdown でレポートを出力（概要/変更点/確認コマンド）。
 job_type: pr_worktree
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true

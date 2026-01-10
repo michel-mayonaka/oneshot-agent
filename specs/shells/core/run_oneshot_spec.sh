@@ -1135,14 +1135,14 @@ MOCK
     cat <<'YAML' > "$JOB"
 name: test
 prompt_text: "hello"
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: high
 worktree: false
 YAML
 
     When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be success
-    The output should include "model=gpt-5.2-codex"
+    The output should include "model=gpt-5.2"
     The output should include "thinking=high"
   End
 End

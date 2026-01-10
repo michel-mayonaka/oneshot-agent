@@ -26,5 +26,5 @@ prompt_text: |
   - コマンドは実行したもののみ記載する。
 skills:
   - skills/optional/issue-template.md
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: high

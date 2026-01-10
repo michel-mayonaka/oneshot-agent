@@ -20,7 +20,7 @@ prompt_text: |
   - 入力が空の場合は理由を明記して終了する。
   - 依頼内容の確認質問はしない。
 job_type: no_worktree
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true

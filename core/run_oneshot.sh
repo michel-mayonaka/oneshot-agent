@@ -22,7 +22,7 @@ YAML job spec (flat):
   pr_draft: true
   issue: true
   disable_global_skills: true
-  model: gpt-5.2-codex
+  model: gpt-5.2
   thinking: medium
 
 Notes:

@@ -21,7 +21,7 @@ name: issue-planning
 prompt_text: |
   ...
 skills:
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: medium
 ```
 

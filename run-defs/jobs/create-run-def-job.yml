@@ -21,7 +21,7 @@ skills:
   - skills/optional/create-run-def-job/SKILL.md
   - skills/optional/create-run-def-job/references/templates.md
 job_type: worktree_and_pr
-model: gpt-5.2-codex
+model: gpt-5.2
 thinking: medium
 # target_dir: /path/to/project
 # disable_global_skills: true
