@@ -28,6 +28,12 @@
 - 対応: `logs/stderr_and_time.txt` を確認します。
 - 対応: 必要なら worktree を削除します。
 
+## 補足: worktree 環境構築
+- worktree 作成後に `core/prepare_worktree_env.sh` が実行されます。
+- 同期対象は `ONESHOT_WORKTREE_SYNC_DIRS` で指定します（未指定は `tools/shellspec`）。
+- `ONESHOT_WORKTREE_ENV_MODE` は `copy` / `link` / `install` を指定できます（未指定は `copy`）。
+- 失敗は警告のみで継続します。
+
 ## モードフロー
 - `core/run_mode.sh --mode run-defs/modes/<mode>.yml` でセッションを起動します。
 - `--input` を使って `__INPUT_<KEY>__` を置換できます。

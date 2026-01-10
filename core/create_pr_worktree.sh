@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 usage() {
   cat <<'USAGE'
 Usage: create_pr_worktree.sh --repo <repo_dir> --run-id <id> --job-name <name> --pr <number_or_url>
@@ -162,6 +165,15 @@ fi
 
 if git -C "$REPO_DIR" show-ref --verify --quiet "refs/remotes/$REMOTE_NAME/$HEAD_REF"; then
   git -C "$WORKTREE_DIR" branch --set-upstream-to "$REMOTE_NAME/$HEAD_REF" "$LOCAL_BRANCH" >/dev/null 2>&1 || true
+fi
+
+WORKTREE_ENV_SCRIPT="$ROOT_DIR/core/prepare_worktree_env.sh"
+if [[ -x "$WORKTREE_ENV_SCRIPT" ]]; then
+  if ! "$WORKTREE_ENV_SCRIPT" --repo "$REPO_DIR" --worktree "$WORKTREE_DIR"; then
+    echo "WARN: prepare_worktree_env failed: $WORKTREE_ENV_SCRIPT" >&2
+  fi
+else
+  echo "WARN: prepare_worktree_env.sh not found: $WORKTREE_ENV_SCRIPT" >&2
 fi
 
 echo "worktree_dir=$WORKTREE_DIR"

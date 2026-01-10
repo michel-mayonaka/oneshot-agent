@@ -38,6 +38,7 @@ YAML
 
     When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be success
+    The output should include "run_oneshot_log="
     The path "$TMP_DIR/test-worklogs/job-no-name" should exist
   End
 
@@ -514,6 +515,7 @@ YAML
 
     When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be success
+    The output should include "run_oneshot_log="
   End
 
   It "sets worktree job_type and calls create_worktree"
@@ -688,6 +690,7 @@ YAML
 
     When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be success
+    The output should include "run_oneshot_log="
   End
 
   It "uses legacy worktree_pr with worktree_pr_input"
@@ -973,6 +976,7 @@ YAML
 
     When run env ONESHOT_AGENT_ROOT="$AGENT" ONESHOT_WORKLOGS_ROOT="$TMP_DIR/test-worklogs" bash core/run_oneshot.sh --job "$JOB"
     The status should be failure
+    The output should include "run_oneshot_log="
     The stderr should include "pr_yml requires worktree: true"
   End
 

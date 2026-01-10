@@ -94,6 +94,16 @@ trim() {
   printf '%s' "$s"
 }
 
+strip_quotes() {
+  local s="$1"
+  if [[ "$s" == \"*\" && "$s" == *\" && ${#s} -ge 2 ]]; then
+    s="${s:1:${#s}-2}"
+  elif [[ "$s" == \'*\' && ${#s} -ge 2 ]]; then
+    s="${s:1:${#s}-2}"
+  fi
+  printf '%s' "$s"
+}
+
 # __INPUT_<KEY>__ の置換キーを管理
 set_input() {
   local k="$1"
@@ -214,6 +224,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   if [[ "$line" =~ ^[a-zA-Z0-9_]+: ]]; then
     key="${line%%:*}"
     val="$(trim "${line#*:}")"
+    val="$(strip_quotes "$val")"
     case "$key" in
       name) NAME="$val" ;;
       prompt_file) PROMPT_FILE="$val" ;;
@@ -394,6 +405,10 @@ emit() {
   printf '%s\n' "$*" | tee -a "$RUN_ONESHOT_LOG" >&3
 }
 
+emit_err() {
+  printf '%s\n' "$*" | tee -a "$RUN_ONESHOT_LOG" >&4
+}
+
 TMP_DIR="$(mktemp -d)"
 cleanup() {
   rm -f "$RUN_RUNNING_FILE"
@@ -457,7 +472,7 @@ if [[ -f "$PROMPT_PATH" ]]; then
       k="${override%%=*}"
       v="${override#*=}"
       if [[ -z "$k" || "$k" == "$override" ]]; then
-        echo "Invalid --input (expected key=path): $override" >&2
+        emit_err "Invalid --input (expected key=path): $override"
         exit 1
       fi
       set_input "$k" "$v"
@@ -468,7 +483,7 @@ if [[ -f "$PROMPT_PATH" ]]; then
     v="${INPUT_VALS[$i]}"
     resolved_path=""
     if [[ -z "${ONESHOT_AGENT_ROOT:-}" ]]; then
-      echo "ONESHOT_AGENT_ROOT is required for --input path resolution" >&2
+      emit_err "ONESHOT_AGENT_ROOT is required for --input path resolution"
       exit 1
     fi
     resolved_path="$ONESHOT_AGENT_ROOT/$v"
@@ -476,7 +491,7 @@ if [[ -f "$PROMPT_PATH" ]]; then
       if [[ -f "$v" ]]; then
         resolved_path="$v"
       else
-        echo "Input file not found: key=$k, value=$v, resolved=$resolved_path" >&2
+        emit_err "Input file not found: key=$k, value=$v, resolved=$resolved_path"
         exit 1
       fi
     fi
@@ -513,7 +528,7 @@ if [[ ${#SKILL_FILES[@]} -gt 0 ]]; then
         resolved="$JOB_SPEC_DIR/$entry"
       fi
       if [[ -z "$resolved" || ! -f "$resolved" ]]; then
-        echo "Skill file not found: $entry" >&2
+        emit_err "Skill file not found: $entry"
         exit 1
       fi
       display="$resolved"
@@ -533,7 +548,7 @@ fi
 
 # レンダリングのみ（置換結果の出力）
 if [[ $RENDER_ONLY -eq 1 ]]; then
-  cat "$PROMPT_PATH"
+  cat "$PROMPT_PATH" | tee -a "$RUN_ONESHOT_LOG" >&3
   exit 0
 fi
 
@@ -545,12 +560,6 @@ WORKTREE_BRANCH=""
 WORKTREE_BASE=""
 # worktree を作成してターゲットを差し替え
 if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
-  WORKTREE_SCRIPT="$ROOT_DIR/core/create_worktree.sh"
-  if [[ ! -x "$WORKTREE_SCRIPT" ]]; then
-    echo "create_worktree.sh not found: $WORKTREE_SCRIPT" >&2
-    exit 1
-  fi
-
   WORKTREE_ARGS=(
     --repo "$TARGET_DIR"
     --run-id "$RUN_ID"
@@ -561,7 +570,7 @@ if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
   if [[ "$WORKTREE_PR" == "true" || "$WORKTREE_PR" == "1" ]]; then
     WORKTREE_SCRIPT="$ROOT_DIR/core/create_pr_worktree.sh"
     if [[ ! -x "$WORKTREE_SCRIPT" ]]; then
-      echo "create_pr_worktree.sh not found: $WORKTREE_SCRIPT" >&2
+      emit_err "create_pr_worktree.sh not found: $WORKTREE_SCRIPT"
       exit 1
     fi
     PR_REF="${ONESHOT_PR:-}"
@@ -573,10 +582,16 @@ if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
       fi
     fi
     if [[ -z "$PR_REF" ]]; then
-      echo "ONESHOT_PR or worktree_pr_input is required for pr worktree" >&2
+      emit_err "ONESHOT_PR or worktree_pr_input is required for pr worktree"
       exit 1
     fi
     WORKTREE_ARGS+=(--pr "$PR_REF")
+  else
+    WORKTREE_SCRIPT="$ROOT_DIR/core/create_worktree.sh"
+    if [[ ! -x "$WORKTREE_SCRIPT" ]]; then
+      emit_err "create_worktree.sh not found: $WORKTREE_SCRIPT"
+      exit 1
+    fi
   fi
 
   WORKTREE_OUTPUT="$("$WORKTREE_SCRIPT" "${WORKTREE_ARGS[@]}")"
@@ -586,7 +601,7 @@ if [[ "$USE_WORKTREE" == "true" || "$USE_WORKTREE" == "1" ]]; then
   WORKTREE_BRANCH="$(printf '%s\n' "$WORKTREE_OUTPUT" | awk -F= '/^branch=/{print $2}' | tail -n 1)"
   WORKTREE_BASE="$(printf '%s\n' "$WORKTREE_OUTPUT" | awk -F= '/^base_branch=/{print $2}' | tail -n 1)"
   if [[ -z "$WORKTREE_DIR" ]]; then
-    echo "Failed to create worktree" >&2
+    emit_err "Failed to create worktree"
     exit 1
   fi
   TARGET_DIR="$WORKTREE_DIR"
@@ -663,12 +678,12 @@ fi
 # PR worktree の push（レビュー修正向け）
 if [[ "$WORKTREE_PR" == "true" || "$WORKTREE_PR" == "1" ]]; then
   if [[ -z "$WORKTREE_DIR" ]]; then
-    echo "worktree_dir not found; cannot push" >&2
+    emit_err "worktree_dir not found; cannot push"
     exit 1
   fi
   PUSH_SCRIPT="$ROOT_DIR/core/push_worktree.sh"
   if [[ ! -x "$PUSH_SCRIPT" ]]; then
-    echo "push_worktree.sh not found: $PUSH_SCRIPT" >&2
+    emit_err "push_worktree.sh not found: $PUSH_SCRIPT"
     exit 1
   fi
   PUSH_OUTPUT="$("$PUSH_SCRIPT" --worktree "$WORKTREE_DIR" --commit-message "${NAME}: update (${RUN_ID})")"
@@ -678,16 +693,16 @@ fi
 # PR下書きYAML生成（有効時のみ）
 if [[ "$PR_YML" == "true" || "$PR_YML" == "1" ]]; then
   if [[ -z "$RUN_DIR" ]]; then
-    echo "run_dir not found; cannot generate pr.yml" >&2
+    emit_err "run_dir not found; cannot generate pr.yml"
     exit 1
   fi
   if [[ -z "$WORKTREE_DIR" ]]; then
-    echo "pr_yml requires worktree: true" >&2
+    emit_err "pr_yml requires worktree: true"
     exit 1
   fi
   PR_YML_SCRIPT="$ROOT_DIR/core/generate_pr_yml.sh"
   if [[ ! -x "$PR_YML_SCRIPT" ]]; then
-    echo "generate_pr_yml.sh not found: $PR_YML_SCRIPT" >&2
+    emit_err "generate_pr_yml.sh not found: $PR_YML_SCRIPT"
     exit 1
   fi
   PR_YML_OUTPUT="$("$PR_YML_SCRIPT" "$RUN_DIR")"
@@ -697,18 +712,18 @@ fi
 # PR作成（有効時のみ）
 if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
   if [[ -z "$RUN_DIR" ]]; then
-    echo "run_dir not found; cannot create PR" >&2
+    emit_err "run_dir not found; cannot create PR"
     exit 1
   fi
   if [[ -z "$WORKTREE_DIR" ]]; then
-    echo "pr requires worktree: true" >&2
+    emit_err "pr requires worktree: true"
     exit 1
   fi
   PR_YML_PATH="$RUN_DIR/pr.yml"
   if [[ ! -f "$PR_YML_PATH" ]]; then
     PR_YML_SCRIPT="$ROOT_DIR/core/generate_pr_yml.sh"
     if [[ ! -x "$PR_YML_SCRIPT" ]]; then
-      echo "generate_pr_yml.sh not found: $PR_YML_SCRIPT" >&2
+      emit_err "generate_pr_yml.sh not found: $PR_YML_SCRIPT"
       exit 1
     fi
     PR_YML_OUTPUT="$("$PR_YML_SCRIPT" "$RUN_DIR")"
@@ -717,7 +732,7 @@ if [[ "$PR_ENABLED" == "true" || "$PR_ENABLED" == "1" ]]; then
 
   PR_SCRIPT="$ROOT_DIR/core/create_pr.sh"
   if [[ ! -x "$PR_SCRIPT" ]]; then
-    echo "create_pr.sh not found: $PR_SCRIPT" >&2
+    emit_err "create_pr.sh not found: $PR_SCRIPT"
     exit 1
   fi
 
@@ -740,12 +755,12 @@ fi
 # Issue作成（有効時のみ）
 if [[ "$ISSUE_ENABLED" == "true" || "$ISSUE_ENABLED" == "1" ]]; then
   if [[ -z "$RUN_DIR" ]]; then
-    echo "run_dir not found; cannot create issue" >&2
+    emit_err "run_dir not found; cannot create issue"
     exit 1
   fi
   ISSUE_SCRIPT="$ROOT_DIR/core/create_issue.sh"
   if [[ ! -x "$ISSUE_SCRIPT" ]]; then
-    echo "create_issue.sh not found: $ISSUE_SCRIPT" >&2
+    emit_err "create_issue.sh not found: $ISSUE_SCRIPT"
     exit 1
   fi
   ISSUE_PATH=""
@@ -756,7 +771,7 @@ if [[ "$ISSUE_ENABLED" == "true" || "$ISSUE_ENABLED" == "1" ]]; then
   elif [[ -f "$RUN_DIR/issue.yaml" ]]; then
     ISSUE_PATH="$RUN_DIR/issue.yaml"
   else
-    echo "issue.yml not found in run_dir: $RUN_DIR" >&2
+    emit_err "issue.yml not found in run_dir: $RUN_DIR"
     exit 1
   fi
   ISSUE_OUTPUT="$("$ISSUE_SCRIPT" --repo "$REPO_DIR" --issue-yml "$ISSUE_PATH")"

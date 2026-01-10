@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SPEC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SPEC_ROOT/.." && pwd)"
+REPO_ROOT="$(cd "$SPEC_ROOT/../.." && pwd)"
 
 export SPEC_ROOT
 export REPO_ROOT

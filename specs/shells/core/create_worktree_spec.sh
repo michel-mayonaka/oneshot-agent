@@ -22,6 +22,7 @@ Describe "core/create_worktree.sh"
   It "creates worktree"
     REPO="$TMP_DIR/repo"
     mkdir -p "$REPO"
+    mkdir -p "$REPO/tools/shellspec"
 
     When run env GIT_MOCK_GIT_DIR_STATUS=0 bash core/create_worktree.sh --repo "$REPO" --run-id 123 --job-name test
     The status should be success
@@ -45,5 +46,15 @@ Describe "core/create_worktree.sh"
     When run env GIT_MOCK_GIT_DIR_STATUS=0 bash core/create_worktree.sh --repo "$REPO" --run-id 123 --job-name test --worktree-root "$WORKLOGS_ROOT"
     The status should be failure
     The stderr should include "Worktree dir already exists"
+  End
+
+  It "syncs configured paths"
+    REPO="$TMP_DIR/repo"
+    make_file "$REPO/tools/vendor/sample.txt" "ok"
+
+    When run env GIT_MOCK_GIT_DIR_STATUS=0 ONESHOT_WORKTREE_SYNC_DIRS=tools/vendor bash core/create_worktree.sh --repo "$REPO" --run-id 123 --job-name test
+    The status should be success
+    The output should include "worktree_dir="
+    The path "$REPO/worklogs/123/worktree/tools/vendor/sample.txt" should exist
   End
 End
