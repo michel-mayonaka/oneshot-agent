@@ -14,6 +14,7 @@ Usage: $(basename "$0") [-C <target_dir>] [-s skill1,skill2] <prompt.txt or prom
   ONESHOT_DISABLE_GLOBAL_SKILLS グローバルskills(global/)を無効化する場合に1を設定。
   ONESHOT_MODEL                 Codex 実行モデル（未指定時は gpt-5.2）。
   ONESHOT_THINKING              reasoning.effort に渡す thinking レベル（例: low/medium/high）。
+  ONESHOT_MAX_PROMPT_TOKENS     プロンプト概算トークン数（utf8_bytes/4 の切り上げ）が上限超過の場合、Codex実行を拒否して非ゼロ終了します。
 EOF
 }
 
@@ -101,6 +102,7 @@ printf '%s\n' "$TARGET_DIR" > "$RUN_DIR/logs/target_dir.txt"
 RAW_PROMPT_FILE="$RUN_DIR/prompts/prompt.raw.txt"
 FINAL_PROMPT_FILE="$RUN_DIR/prompts/prompt.txt"
 SKILLS_USED_FILE="$RUN_DIR/prompts/skills_used.txt"
+PROMPT_STATS_FILE="$RUN_DIR/prompts/prompt_stats.txt"
 
 if [[ -f "$SKILLS_USED_FILE" ]]; then
   : > "$SKILLS_USED_FILE"
@@ -211,6 +213,67 @@ set -u
   echo ""
   echo "----- USER PROMPT END -----"
 } > "$FINAL_PROMPT_FILE"
+
+# prompt.txt の統計を保存（受け入れ条件: prompts/prompt_stats.txt）
+PROMPT_LINES="$(wc -l < "$FINAL_PROMPT_FILE" | tr -d ' ')"
+PROMPT_UTF8_BYTES="$(wc -c < "$FINAL_PROMPT_FILE" | tr -d ' ')"
+PROMPT_CHARS=""
+if command -v python3 >/dev/null 2>&1; then
+  PROMPT_CHARS="$(
+    python3 - "$FINAL_PROMPT_FILE" <<'PY'
+import sys
+path = sys.argv[1]
+with open(path, "rb") as f:
+    b = f.read()
+try:
+    s = b.decode("utf-8")
+except UnicodeDecodeError:
+    s = b.decode("utf-8", errors="replace")
+print(len(s))
+PY
+  )"
+else
+  PROMPT_CHARS="$(wc -m < "$FINAL_PROMPT_FILE" | tr -d ' ')"
+fi
+PROMPT_APPROX_TOKENS="$(( (PROMPT_UTF8_BYTES + 3) / 4 ))"
+cat > "$PROMPT_STATS_FILE" <<EOF
+chars: ${PROMPT_CHARS}
+lines: ${PROMPT_LINES}
+utf8_bytes: ${PROMPT_UTF8_BYTES}
+approx_tokens: ${PROMPT_APPROX_TOKENS}
+method: ceil(utf8_bytes/4)
+EOF
+
+# 上限超過時は Codex を実行せずに拒否する（受け入れ条件: 非ゼロ終了 + 理由をログへ）
+MAX_PROMPT_TOKENS="${ONESHOT_MAX_PROMPT_TOKENS:-}"
+if [[ -n "$MAX_PROMPT_TOKENS" ]]; then
+  if ! [[ "$MAX_PROMPT_TOKENS" =~ ^[0-9]+$ ]]; then
+    REJECT_REASON="ERROR: invalid ONESHOT_MAX_PROMPT_TOKENS (must be integer): ${MAX_PROMPT_TOKENS}"
+    {
+      echo "$REJECT_REASON"
+      echo "prompt_stats: prompts/prompt_stats.txt (approx_tokens=${PROMPT_APPROX_TOKENS})"
+    } > "$RUN_DIR/logs/stderr_and_time.txt"
+    printf '%s\n' "$REJECT_REASON" > "$RUN_DIR/logs/last_message.md"
+    "$SCRIPT_DIR/summarize_run.sh" "$RUN_DIR"
+    echo "run_dir=$RUN_DIR"
+    echo "target_dir=$TARGET_DIR"
+    exit 2
+  fi
+
+  if (( PROMPT_APPROX_TOKENS > MAX_PROMPT_TOKENS )); then
+    REJECT_REASON="ERROR: prompt token estimate exceeded ONESHOT_MAX_PROMPT_TOKENS (estimated=${PROMPT_APPROX_TOKENS}, limit=${MAX_PROMPT_TOKENS}). Refusing to run codex."
+    {
+      echo "$REJECT_REASON"
+      echo "prompt_stats: prompts/prompt_stats.txt"
+      echo "method: ceil(utf8_bytes/4)"
+    } > "$RUN_DIR/logs/stderr_and_time.txt"
+    printf '%s\n' "$REJECT_REASON" > "$RUN_DIR/logs/last_message.md"
+    "$SCRIPT_DIR/summarize_run.sh" "$RUN_DIR"
+    echo "run_dir=$RUN_DIR"
+    echo "target_dir=$TARGET_DIR"
+    exit 3
+  fi
+fi
 
 # Codex実行オプション
 MODEL="${ONESHOT_MODEL:-gpt-5.2}"

@@ -28,6 +28,11 @@
 - 対応: `logs/stderr_and_time.txt` を確認します。
 - 対応: 必要なら worktree を削除します。
 
+## 例外フロー: プロンプト上限超過で拒否される
+- 症状: Codex 実行前に終了し、`report.md` に拒否理由が載ります。
+- 対応: `prompts/prompt_stats.txt` を確認し、skills や入力を削減します。
+- 対応: 必要なら `ONESHOT_MAX_PROMPT_TOKENS` を調整します（設定していない場合は未制限）。
+
 ## 補足: worktree 環境構築
 - worktree 作成後に `core/prepare_worktree_env.sh` が実行されます。
 - 同期対象は `ONESHOT_WORKTREE_SYNC_DIRS` で指定します（未指定は `tools/shellspec`）。
@@ -47,8 +52,9 @@
 
 ## Definition of Done
 - `report.md` が存在します。
-- `logs/events.jsonl` が存在します。
+- `logs/events.jsonl` が存在します（プロンプト上限超過で拒否された場合は未生成の場合があります）。
 - `prompts/prompt.txt` が存在します。
+- `prompts/prompt_stats.txt` が存在します。
 - `logs/stderr_and_time.txt` を確認済みです。
 - worktree 使用時は `run_dir/worktree` が存在します。
 

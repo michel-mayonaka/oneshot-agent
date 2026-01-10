@@ -64,10 +64,8 @@
 
 ## プロンプトサイズ & バリデーション方針（構想段階）
 - Skills を盛り込みすぎると精度が落ちる可能性があるため、「検知 → 必要なら制御する」という方針をとります。
-- `oneshot_exec.sh` 側での想定:
-  - `prompt.txt` 生成後に、文字数・行数・概算トークン数を計測し、`prompt_stats.txt` に保存する。
-  - 閾値を越えたら stderr に警告を出す（例: `WARN: prompt is very large; consider trimming skills.`）。
-- 環境変数による制御案:
-  - `ONESHOT_MAX_PROMPT_CHARS` / `ONESHOT_MAX_PROMPT_TOKENS`: ソフトリミット（警告用）。
-  - `ONESHOT_STRICT_PROMPT_LIMIT=1`: 有効な場合は、リミット超過時に実行を中断し、`report.md` に中断理由を書き出す。
-- 実装を進める場合は、まず「計測とログ出し」から入り、その後で中断ロジックや skills 側の要約戦略に広げてください。
+- `oneshot_exec.sh` の挙動:
+  - `prompt.txt` 生成後に、文字数・行数・概算トークン数を計測し、`prompts/prompt_stats.txt` に保存します。
+  - 概算トークン数は `ceil(utf8_bytes/4)`（UTF-8バイト数/4の切り上げ）で算出します。
+  - `ONESHOT_MAX_PROMPT_TOKENS` が設定され、概算トークン数が上限超過の場合は Codex 実行を行わずに非ゼロ終了します。
+    - 理由は `logs/stderr_and_time.txt` と `logs/last_message.md` に残り、`report.md` にも掲載されます。

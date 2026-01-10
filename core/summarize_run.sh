@@ -5,6 +5,7 @@ RUN_DIR="${1:?usage: summarize_run.sh <run_dir>}"
 EVENTS="$RUN_DIR/logs/events.jsonl"
 TIMELOG="$RUN_DIR/logs/stderr_and_time.txt"
 PROMPT="$RUN_DIR/prompts/prompt.txt"
+PROMPT_STATS="$RUN_DIR/prompts/prompt_stats.txt"
 LASTMSG="$RUN_DIR/logs/last_message.md"
 SKILLS_USED="$RUN_DIR/prompts/skills_used.txt"
 
@@ -121,6 +122,9 @@ $( [[ -n "$DIFF_NAMESTAT" ]] && printf '```text\n%s\n```\n' "$DIFF_NAMESTAT" || 
 ## Prompt (first 80 lines) / プロンプト（先頭80行）
 $( [[ -f "$PROMPT" ]] && printf '```text\n%s\n```\n' "$(sed -n '1,80p' "$PROMPT")" || echo "- (missing prompt.txt)" )
 
+## Prompt Stats / プロンプト統計
+$( [[ -f "$PROMPT_STATS" ]] && printf '```text\n%s\n```\n' "$(cat "$PROMPT_STATS")" || echo "- (missing prompts/prompt_stats.txt)" )
+
 ## Output (last_message or worklog head) / 出力（最終メッセージ or 作業ログ先頭）
 $( [[ -n "$LASTMSG_HEAD" ]] && printf '```markdown\n%s\n```\n' "$LASTMSG_HEAD" || echo "- (no output captured)" )
 
@@ -134,6 +138,7 @@ $( [[ -n "$ERROR_SNIPPET" ]] && printf '```text\n%s\n```\n' "$ERROR_SNIPPET" || 
 - commands_json: $( [[ -f "$RUN_DIR/logs/commands.jsonl" ]] && echo "\`logs/commands.jsonl\`" || echo "N/A" )
 - stderr/time: $( [[ -f "$TIMELOG" ]] && echo "\`logs/stderr_and_time.txt\`" || echo "N/A" )
 - skills_used: $( [[ -f "$SKILLS_USED" ]] && echo "\`prompts/skills_used.txt\`" || echo "N/A" )
+- prompt_stats: $( [[ -f "$PROMPT_STATS" ]] && echo "\`prompts/prompt_stats.txt\`" || echo "N/A" )
 EOF
 
 echo "generated: $OUT"

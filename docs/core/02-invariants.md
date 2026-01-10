@@ -7,6 +7,7 @@
 - oneshot-exec 単独実行の既定は `worklogs/oneshot-exec/` です。
 - `oneshot_exec.sh` は `logs/` を作成します。
 - `prompts/` と `inputs/` も作成します。
+- `prompts/prompt_stats.txt` に `prompt.txt` の統計（文字数/行数/概算トークン数/算出方法）を保存します。
 - `-C` 省略時は `artifacts/` を作成します。
 - `run_oneshot.sh` は `worklogs/<job>/<run_id>` を使います。
 - `worklogs/<job>/` 直下は最新runと `archive/` です。
@@ -80,6 +81,7 @@
 - 自動リトライやバックオフは行いません。
 - 失敗時は終了コードが伝播します。
 - エラーは `logs/stderr_and_time.txt` に残ります。
+- `ONESHOT_MAX_PROMPT_TOKENS` 上限超過時は Codex を実行せずに拒否し、理由を `logs/stderr_and_time.txt` と `logs/last_message.md` に残します。
 仮定:
 - 人間がログを確認して復旧します。
 理由:
